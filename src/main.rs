@@ -30,7 +30,9 @@ fn main() -> lopdf::Result<()> {
     // Validate that the source PDF file exists
     if !input_path.exists() {
         eprintln!("Error: PDF file not found at '{}'", input_path.display());
-        eprintln!("Please create an 'input' directory and place your PDF file inside.");
+        eprintln!(
+            "Please provide a valid PDF file path (for example: /path/to/document.pdf) using the `--input` / `-i` argument."
+        );
         std::process::exit(1);
     }
 
@@ -70,12 +72,9 @@ fn main() -> lopdf::Result<()> {
         new_doc.renumber_objects();
 
         // Save the single-page document
-        let output_filename = format!(
-            "{}/page_{:03}.pdf",
-            output_dir.to_str().unwrap(),
-            page_number
-        );
-        new_doc.save(&output_filename)?;
+        // Construct the output path using `join` to avoid UTF-8 conversion and string concatenation.
+        let output_path = output_dir.join(format!("page_{:03}.pdf", page_number));
+        new_doc.save(&output_path)?;
     }
 
     println!(
