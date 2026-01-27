@@ -1,13 +1,31 @@
 //! A simple PDF splitter that extracts each page into a separate PDF file.
 
+use clap::Parser;
 use lopdf::Document;
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Path to the input PDF file to be split.
+    /// Example: /path/to/document.pdf
+    #[arg(short, long, value_name = "FILE")]
+    input: PathBuf,
+
+    /// Path to the output directory where split pages will be saved.
+    /// Defaults to "output_pages" in the current working directory.
+    /// Example: /path/to/output/
+    #[arg(short, long, value_name = "DIR", default_value = "output_pages")]
+    output: PathBuf,
+}
 
 fn main() -> lopdf::Result<()> {
-    // Define input and output paths
-    let input_path = Path::new("input/sample.pdf");
-    let output_dir = Path::new("output_pages");
+    let args = Args::parse();
+
+    // Define input and output paths from CLI args
+    let input_path = &args.input;
+    let output_dir = &args.output;
 
     // Validate that the source PDF file exists
     if !input_path.exists() {
