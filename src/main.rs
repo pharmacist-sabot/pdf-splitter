@@ -28,7 +28,7 @@ fn main() -> lopdf::Result<()> {
     let output_dir = &args.output;
 
     // Validate that the source PDF file exists
-    if !input_path.exists() {
+    if !input_path.is_file() {
         eprintln!("Error: PDF file not found at '{}'", input_path.display());
         eprintln!(
             "Please provide a valid PDF file path (for example: /path/to/document.pdf) using the `--input` / `-i` argument."
