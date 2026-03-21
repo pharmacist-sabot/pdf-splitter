@@ -5,20 +5,20 @@ A robust, command-line utility written in Rust for splitting multi-page PDF docu
 ![Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-## 📖 Overview
+## Overview
 
 `pdf-splitter` is a CLI tool designed to take a single PDF file and extract every page into its own separate file. It is built with safety and simplicity in mind, leveraging the power of [lopdf](https://github.com/J-F-Liu/lopdf) to handle complex PDF structures reliably.
 
 Whether you are processing invoices, scanning archives, or breaking down ebooks, `pdf-splitter` provides a fast and reliable way to decompose your documents.
 
-## ✨ Features
+## Features
 
 - **Simple CLI Interface**: Easy-to-use command line arguments powered by `clap`.
 - **Automatic Output Management**: Automatically creates output directories if they don't exist.
 - **Robust Processing**: Handles complex PDF objects by preserving document context during split operations.
 - **Optimization**: Includes an optimization step (`prune_objects` and `renumber_objects`) to keep resulting file sizes reasonable.
 
-## 🚀 Installation
+## Installation
 
 Ensure you have [Rust and Cargo installed](https://rustup.rs/) on your system.
 
@@ -38,7 +38,7 @@ Or run it directly without installing:
 cargo run --release -- --input document.pdf
 ```
 
-## 💡 Usage
+## Usage
 
 The basic usage requires an input file path. By default, pages will be saved to an `output_pages` directory.
 
@@ -77,7 +77,7 @@ Options:
   -V, --version       Print version
 ```
 
-## 🏗 Design Decisions
+## Design Decisions
 
 ### The "Clone & Prune" Strategy
 
@@ -92,7 +92,7 @@ To ensure 100% fidelity:
 **Why?**
 This approach guarantees that any shared resource required by the page is preserved. While purely copying objects to a new document is theoretically more efficient, it is significantly more error-prone due to the interconnected nature of PDF reference graphs. The "Clone & Prune" method trades some CPU cycles for correctness.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -102,6 +102,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is open source and available under the MIT License.
