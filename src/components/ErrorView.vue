@@ -2,25 +2,11 @@
 /**
  * ErrorView — "error" state view.
  *
- * Displayed whenever a Tauri command rejects with a `PdfError`.  Shows a
- * clear, human-readable error message together with contextual guidance and
- * two recovery actions:
+ * Terminal aesthetic: the error output mimics stderr from a CLI command.
+ * The header shows `✗ <kind>` in red, the message is displayed in a
+ * terminal code block, and the hint reads like a man-page note.
  *
- * • "Try Again"      — re-opens the file picker so the user can select a
- *                      different (or the same) PDF.
- * • "Dismiss"        — returns to the idle drop-zone without opening the
- *                      picker immediately.
- *
- * Props
- * ─────
- * • `message`  — human-readable error string forwarded from `PdfError.message`.
- * • `kind`     — machine-readable discriminant from `PdfError.kind`, used to
- *                render a contextual hint below the main message.
- *
- * Events
- * ──────
- * • `retry`   — user clicked "Try Again" (open file picker).
- * • `dismiss` — user clicked "Dismiss" (return to idle, no picker).
+ * Props / computed logic unchanged — only the visual presentation is redesigned.
  */
 
 import { computed } from 'vue'
@@ -29,28 +15,19 @@ import type { PdfError } from '@/types'
 // ── Props & emits ──────────────────────────────────────────────────────────────
 
 const props = defineProps<{
-    /** Human-readable error description, e.g. `"File not found: /tmp/x.pdf"`. */
+    /** Human-readable error description forwarded from `PdfError.message`. */
     message: string
-    /**
-     * Machine-readable error kind — a variant name from `PdfError`.
-     * Used to show contextual guidance below the main message.
-     */
+    /** Machine-readable error kind — used to render contextual guidance. */
     kind?: PdfError['kind']
 }>()
 
 const emit = defineEmits<{
-    /** Open the file picker so the user can select a new PDF. */
     retry: []
-    /** Return to idle without opening the picker. */
     dismiss: []
 }>()
 
 // ── Computed ───────────────────────────────────────────────────────────────────
 
-/**
- * Contextual hint text shown below the raw error message.
- * Maps each `PdfError` kind to actionable guidance.
- */
 const hint = computed<string>(() => {
     switch (props.kind) {
         case 'FileNotFound':
@@ -68,22 +45,14 @@ const hint = computed<string>(() => {
     }
 })
 
-/**
- * Emoji / icon label for the error kind — subtle visual differentiation
- * without requiring additional icon assets.
- */
-const severityLabel = computed<string>(() => {
+const kindLabel = computed<string>(() => {
     switch (props.kind) {
-        case 'FileNotFound':
-            return 'File not found'
-        case 'InvalidPdf':
-            return 'Invalid PDF'
-        case 'NoPages':
-            return 'Empty document'
-        case 'Io':
-            return 'Filesystem error'
-        default:
-            return 'Error'
+        case 'FileNotFound': return 'FileNotFound'
+        case 'InvalidPdf': return 'InvalidPdf'
+        case 'NoPages': return 'NoPages'
+        case 'Io': return 'IOError'
+        case 'Internal': return 'InternalError'
+        default: return 'Error'
     }
 })
 
@@ -101,60 +70,53 @@ function onDismiss(): void {
 <template>
 <div class="error-view" role="alert" aria-live="assertive">
 
-    <!-- ── Error icon ──────────────────────────────────────────────────────── -->
-    <div class="error-icon-wrap" aria-hidden="true">
-        <!-- Outer glow ring -->
-        <div class="error-icon-glow" />
-
-        <!-- Icon circle -->
-        <div class="error-icon-circle">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
-                <!-- Background circle -->
-                <circle cx="16" cy="16" r="16" fill="currentColor" class="error-circle" />
-                <!-- Exclamation mark — vertical bar -->
-                <rect x="14.75" y="8" width="2.5" height="10" rx="1.25" fill="white" />
-                <!-- Exclamation mark — dot -->
-                <circle cx="16" cy="22.5" r="1.5" fill="white" />
-            </svg>
+    <!-- ── Error header (stderr line) ────────────────────────────────────── -->
+    <div class="error-header">
+        <span class="error-header__x" aria-hidden="true">✗</span>
+        <div class="error-header__text">
+            <span class="error-header__kind">{{ kindLabel }}</span>
+            <span class="error-header__sep" aria-hidden="true">:</span>
+            <span class="error-header__label">process exited with error</span>
         </div>
     </div>
 
-    <!-- ── Text block ──────────────────────────────────────────────────────── -->
-    <div class="error-text">
-        <!-- Kind badge -->
-        <span v-if="kind" class="badge badge-error error-kind-badge" aria-label="Error type">
-            {{ severityLabel }}
-        </span>
+    <!-- ── Error output block ─────────────────────────────────────────────── -->
+    <div class="error-block">
+        <!-- stderr label -->
+        <div class="error-block__label" aria-hidden="true">
+            <span class="error-block__stream">stderr</span>
+        </div>
 
-        <!-- Main message -->
+        <!-- Error message (selectable) -->
         <p class="error-message" data-selectable>
+            <span class="error-message__prefix" aria-hidden="true">error:</span>
             {{ message }}
         </p>
+    </div>
 
-        <!-- Contextual hint -->
-        <p class="error-hint">
-            {{ hint }}
-        </p>
+    <!-- ── Hint / note ────────────────────────────────────────────────────── -->
+    <div class="error-note">
+        <span class="error-note__prefix" aria-hidden="true">#</span>
+        <p class="error-note__text">{{ hint }}</p>
     </div>
 
     <!-- ── Separator ──────────────────────────────────────────────────────── -->
     <div class="separator error-separator" role="separator" />
 
-    <!-- ── Action row ─────────────────────────────────────────────────────── -->
+    <!-- ── Actions ────────────────────────────────────────────────────────── -->
     <div class="error-actions">
-        <!-- Dismiss — ghost action -->
         <button type="button" class="btn-ghost error-actions__dismiss" @click="onDismiss">
-            Dismiss
+            [dismiss]
         </button>
 
-        <!-- Try again — primary action -->
         <button type="button" class="btn-primary error-actions__retry" @click="onRetry">
-            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-md" aria-hidden="true">
+            <span class="error-actions__prompt" aria-hidden="true">$</span>
+            try-again
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm" aria-hidden="true">
                 <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M4 10a6 6 0 0 1 10.472-4H12.5a.75.75 0 0 0 0 1.5h3.25A.75.75 0 0 0 16.5 6.75V3.5a.75.75 0 0 0-1.5 0v1.848A7.5 7.5 0 1 0 17.5 10a.75.75 0 0 0-1.5 0A6 6 0 1 1 4 10Z"
+                    d="M3.5 8a4.5 4.5 0 0 1 7.854-3H9.25a.75.75 0 0 0 0 1.5h3.25a.75.75 0 0 0 .75-.75V2.5a.75.75 0 0 0-1.5 0v1.386A6 6 0 1 0 14 8a.75.75 0 0 0-1.5 0A4.5 4.5 0 1 1 3.5 8Z"
                     fill="currentColor" />
             </svg>
-            Try Again
         </button>
     </div>
 
@@ -167,62 +129,39 @@ function onDismiss(): void {
 .error-view {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--space-6);
+    gap: var(--space-4);
     width: 100%;
-    padding: var(--space-4) 0;
-    text-align: center;
+    padding: var(--space-2) 0;
 }
 
-/* ── Icon wrap ────────────────────────────────────────────────────────────────── */
+/* ── Error header ─────────────────────────────────────────────────────────────── */
 
-.error-icon-wrap {
-    position: relative;
-    width: 72px;
-    height: 72px;
+.error-header {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: var(--space-3);
+}
+
+/* ✗ symbol */
+.error-header__x {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: var(--weight-bold);
+    color: var(--color-error);
+    text-shadow: 0 0 10px rgba(248, 81, 73, 0.45);
     flex-shrink: 0;
-}
-
-/* Blurred outer glow */
-.error-icon-glow {
-    position: absolute;
-    inset: -10px;
-    border-radius: var(--radius-full);
-    background: radial-gradient(ellipse at center,
-            rgba(255, 59, 48, 0.22) 0%,
-            transparent 70%);
-    pointer-events: none;
-}
-
-/* Frosted circle behind the SVG */
-.error-icon-circle {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-full);
-    background: var(--color-error-subtle);
-    border: 1.5px solid rgba(255, 59, 48, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-        0 4px 16px rgba(255, 59, 48, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    /* Entrance animation */
+    line-height: 1;
     animation: error-icon-in var(--duration-slow) var(--ease-spring) forwards;
 }
 
 @keyframes error-icon-in {
     0% {
-        transform: scale(0.6);
+        transform: scale(0.5);
         opacity: 0;
     }
 
     70% {
-        transform: scale(1.08);
+        transform: scale(1.15);
         opacity: 1;
     }
 
@@ -232,113 +171,160 @@ function onDismiss(): void {
     }
 }
 
-/* SVG icon colour */
-.error-circle {
-    opacity: 0.88;
-    color: var(--color-error);
-}
-
-/* ── Text block ───────────────────────────────────────────────────────────────── */
-
-.error-text {
+.error-header__text {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    max-width: 440px;
-    width: 100%;
-}
-
-/* ── Error kind badge ─────────────────────────────────────────────────────────── */
-
-.error-kind-badge {
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-wider);
-    text-transform: uppercase;
-}
-
-/* ── Main message ─────────────────────────────────────────────────────────────── */
-
-.error-message {
+    align-items: baseline;
+    gap: 0;
+    font-family: var(--font-mono);
     font-size: var(--text-base);
-    font-weight: var(--weight-medium);
-    color: var(--color-error-text);
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-tight);
-    /* Allow selection so the user can copy the error for bug reports */
-    user-select: text;
-    cursor: text;
-    padding: var(--space-3) var(--space-5);
-    background: var(--color-error-subtle);
-    border: 1px solid rgba(255, 59, 48, 0.14);
-    border-radius: var(--radius-md);
-    width: 100%;
-    text-align: left;
-    /* Truncate extremely long paths */
-    word-break: break-all;
+    flex-wrap: wrap;
+    gap: 2px;
 }
 
-/* ── Contextual hint ──────────────────────────────────────────────────────────── */
+.error-header__kind {
+    font-weight: var(--weight-bold);
+    color: var(--color-error-text);
+}
 
-.error-hint {
-    font-size: var(--text-sm);
+.error-header__sep {
+    color: var(--color-text-quaternary);
+    margin: 0 2px;
+}
+
+.error-header__label {
     color: var(--color-text-tertiary);
     font-weight: var(--weight-regular);
+}
+
+/* ── Error block (stderr output) ──────────────────────────────────────────────── */
+
+.error-block {
+    border: 1px solid rgba(248, 81, 73, 0.25);
+    border-radius: var(--radius-md);
+    background: rgba(248, 81, 73, 0.05);
+    overflow: hidden;
+}
+
+/* "stderr" label bar */
+.error-block__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    background: rgba(248, 81, 73, 0.08);
+    border-bottom: 1px solid rgba(248, 81, 73, 0.15);
+}
+
+.error-block__stream {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-error-text);
+    opacity: 0.65;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    font-weight: var(--weight-semibold);
+}
+
+/* Message text */
+.error-message {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-error-text);
+    line-height: var(--leading-snug);
+    padding: var(--space-3) var(--space-4);
+    /* Allow user to copy error for bug reports */
+    user-select: text;
+    cursor: text;
+    word-break: break-all;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.error-message__prefix {
+    color: var(--color-error);
+    font-weight: var(--weight-bold);
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+
+/* ── Hint / note ──────────────────────────────────────────────────────────────── */
+
+.error-note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.error-note__prefix {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-quaternary);
+    flex-shrink: 0;
     line-height: var(--leading-relaxed);
-    text-align: center;
-    max-width: 380px;
+    opacity: 0.6;
+}
+
+.error-note__text {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    line-height: var(--leading-relaxed);
+    flex: 1;
 }
 
 /* ── Separator ────────────────────────────────────────────────────────────────── */
 
 .error-separator {
-    width: 100%;
     background: var(--color-separator);
 }
 
-/* ── Action row ───────────────────────────────────────────────────────────────── */
+/* ── Actions ──────────────────────────────────────────────────────────────────── */
 
 .error-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: var(--space-3);
-    width: 100%;
 }
 
 .error-actions__dismiss {
-    font-size: var(--text-base);
-    color: var(--color-text-tertiary);
-    padding: var(--space-3) var(--space-5);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-quaternary);
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-md);
-    height: 44px;
+    height: 36px;
+    letter-spacing: 0.02em;
 }
 
 .error-actions__dismiss:hover:not(:disabled) {
-    background: var(--color-surface-inset);
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-hover);
 }
 
 .error-actions__retry {
-    min-width: 140px;
-    height: 44px;
-    font-size: var(--text-base);
+    min-width: 148px;
+    height: 38px;
+    font-size: var(--text-sm);
+    font-family: var(--font-mono);
     border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-6);
+    padding: var(--space-2) var(--space-5);
+    gap: var(--space-2);
     box-shadow:
         var(--shadow-sm),
-        0 4px 20px var(--color-accent-glow);
+        0 0 14px rgba(57, 211, 83, 0.15);
     transition:
         background var(--duration-fast) var(--ease-out),
         box-shadow var(--duration-fast) var(--ease-out),
-        transform var(--duration-fast) var(--ease-spring),
-        opacity var(--duration-fast) var(--ease-out);
+        transform var(--duration-fast) var(--ease-spring);
 }
 
 .error-actions__retry:hover:not(:disabled) {
     box-shadow:
         var(--shadow-md),
-        0 8px 28px var(--color-accent-glow);
+        0 0 22px rgba(57, 211, 83, 0.28);
     transform: translateY(-1px);
 }
 
@@ -347,10 +333,15 @@ function onDismiss(): void {
     box-shadow: var(--shadow-sm);
 }
 
+.error-actions__prompt {
+    color: rgba(13, 17, 23, 0.6);
+    font-weight: var(--weight-bold);
+}
+
 /* ── Reduced motion ───────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-    .error-icon-circle {
+    .error-header__x {
         animation: none;
     }
 }

@@ -2,16 +2,14 @@
 /**
  * DropZone — idle state view.
  *
- * Renders a large drag-and-drop target that accepts PDF files dragged from
- * Finder, plus a "Select File" button for the classic click-to-browse flow.
+ * Terminal aesthetic: looks like a file-drop prompt in a modern terminal
+ * emulator.  The dashed border glows green on drag-over; text uses prompt
+ * prefixes (`$`, `>`) to reinforce the terminal metaphor.
  *
  * Events
  * ──────
- * • `pick`  — emitted when the user clicks the "Select File" button.
- *             The parent composable (`usePdfSplitter`) owns the actual dialog
- *             invocation; this component is purely presentational.
- * • `drop`  — emitted with a file path string when the user drops a PDF onto
- *             the zone.  The parent validates and processes the path.
+ * • `pick`  — user clicked the "select file" button.
+ * • `drop`  — user dropped a PDF; payload is the absolute path string.
  *
  * Props
  * ─────
@@ -28,28 +26,16 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    /** User clicked "Select File". */
     pick: []
-    /**
-     * User dropped a file onto the zone.
-     * @param path — absolute path of the dropped file (first file only).
-     */
     drop: [path: string]
 }>()
 
 // ── Drag state ─────────────────────────────────────────────────────────────────
 
-/** True while a drag gesture is hovering over the zone. */
 const isDragOver = ref(false)
-
-/**
- * Counter-based drag tracking prevents flickering when the cursor moves
- * between child elements (each enter/leave pair fires on child elements
- * without a matching event on the parent).
- */
 let dragCounter = 0
 
-// ── Drag event handlers ────────────────────────────────────────────────────────
+// ── Drag handlers ──────────────────────────────────────────────────────────────
 
 function onDragEnter(event: DragEvent): void {
     event.preventDefault()
@@ -84,34 +70,26 @@ function onDrop(event: DragEvent): void {
     if (!files || files.length === 0) return
 
     const file = files[0]
-
-    // Guard: only accept PDF files based on MIME type or extension.
     const isPdf =
         file.type === 'application/pdf' ||
         file.name.toLowerCase().endsWith('.pdf')
-
     if (!isPdf) return
 
-    // In Tauri's WKWebView the File object's `path` property is populated with
-    // the absolute filesystem path on macOS.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const path: string | undefined = (file as any).path
-    if (path) {
-        emit('drop', path)
-    }
+    if (path) emit('drop', path)
 }
 
 // ── Click handler ──────────────────────────────────────────────────────────────
 
 function onSelectClick(): void {
-    if (!props.busy) {
-        emit('pick')
-    }
+    if (!props.busy) emit('pick')
 }
 </script>
 
 <template>
 <div class="drop-zone-wrapper">
+
     <!-- ── Drop target ──────────────────────────────────────────────────────── -->
     <div class="drop-zone" :class="{
         'drop-zone--active': isDragOver && !busy,
@@ -119,85 +97,94 @@ function onSelectClick(): void {
     }" role="button" tabindex="0" aria-label="Drop a PDF file here or press Space to open the file picker"
         @dragenter="onDragEnter" @dragleave="onDragLeave" @dragover="onDragOver" @drop="onDrop" @click="onSelectClick"
         @keydown.space.prevent="onSelectClick" @keydown.enter.prevent="onSelectClick">
-        <!-- Animated background glow (visible on drag-over) -->
+        <!-- Green glow overlay on drag-over -->
         <div class="drop-zone__glow" aria-hidden="true" />
 
         <!-- Content -->
         <div class="drop-zone__content">
-            <!-- PDF icon with float animation -->
+
+            <!-- Terminal PDF icon -->
             <div class="drop-zone__icon" :class="{ 'animate-float': !isDragOver && !busy }" aria-hidden="true">
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl"
-                    style="width: 64px; height: 64px;">
-                    <!-- Document body -->
-                    <rect x="10" y="4" width="36" height="48" rx="4" fill="currentColor" class="icon-body" />
-                    <!-- Folded corner -->
-                    <path d="M38 4 L46 12 L38 12 Z" fill="currentColor" class="icon-fold" />
-                    <!-- PDF label band -->
-                    <rect x="8" y="36" width="40" height="14" rx="3" fill="currentColor" class="icon-band" />
-                    <!-- "PDF" text lines (decorative) -->
-                    <rect x="16" y="42" width="8" height="2" rx="1" fill="white" opacity="0.9" />
-                    <rect x="26" y="42" width="6" height="2" rx="1" fill="white" opacity="0.9" />
-                    <rect x="34" y="42" width="6" height="2" rx="1" fill="white" opacity="0.9" />
-                    <!-- Content lines -->
-                    <rect x="16" y="16" width="20" height="2" rx="1" fill="currentColor" class="icon-line" />
-                    <rect x="16" y="21" width="16" height="2" rx="1" fill="currentColor" class="icon-line" />
-                    <rect x="16" y="26" width="18" height="2" rx="1" fill="currentColor" class="icon-line" />
-                </svg>
+                <div class="drop-zone__icon-box">
+                    <!-- ASCII-style document icon rendered as SVG -->
+                    <svg viewBox="0 0 56 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="56" height="64">
+                        <!-- Document body -->
+                        <rect x="2" y="2" width="44" height="56" rx="3" fill="currentColor" class="icon-body" />
+                        <!-- Folded corner -->
+                        <path d="M32 2 L46 16 L32 16 Z" fill="currentColor" class="icon-fold" />
+                        <!-- Corner fold line -->
+                        <path d="M32 2 L46 16 L32 16 Z" stroke="currentColor" stroke-width="1" class="icon-fold-stroke"
+                            fill="none" />
+                        <!-- Label band -->
+                        <rect x="0" y="40" width="48" height="16" rx="2" fill="currentColor" class="icon-band" />
+                        <!-- "PDF" label lines -->
+                        <rect x="6" y="45.5" width="7" height="1.8" rx="0.9" fill="currentColor" class="icon-label" />
+                        <rect x="15" y="45.5" width="5" height="1.8" rx="0.9" fill="currentColor" class="icon-label" />
+                        <rect x="22" y="45.5" width="5" height="1.8" rx="0.9" fill="currentColor" class="icon-label" />
+                        <!-- Content lines -->
+                        <rect x="7" y="18" width="22" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
+                        <rect x="7" y="22" width="18" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
+                        <rect x="7" y="26" width="20" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
+                        <rect x="7" y="30" width="14" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
+                    </svg>
+                </div>
             </div>
 
-            <!-- Primary label -->
+            <!-- Labels -->
             <div class="drop-zone__label">
                 <template v-if="isDragOver && !busy">
+                    <span class="drop-zone__label-prompt" aria-hidden="true">&gt;</span>
                     <span class="drop-zone__label-main drop-zone__label-main--active">
-                        Release to open
+                        release to load
                     </span>
                 </template>
                 <template v-else-if="busy">
-                    <span class="drop-zone__label-main">
-                        Loading…
+                    <span class="drop-zone__label-prompt" aria-hidden="true">$</span>
+                    <span class="drop-zone__label-main animate-pulse">
+                        loading<span class="drop-zone__ellipsis">...</span>
                     </span>
                 </template>
                 <template v-else>
-                    <span class="drop-zone__label-main">
-                        Drop your PDF here
-                    </span>
-                    <span class="drop-zone__label-sub">
-                        or click to browse files
-                    </span>
+                    <span class="drop-zone__label-prompt" aria-hidden="true">$</span>
+                    <div class="drop-zone__label-stack">
+                        <span class="drop-zone__label-main">
+                            drop .pdf file here
+                        </span>
+                        <span class="drop-zone__label-sub">
+                            or click to browse
+                        </span>
+                    </div>
                 </template>
             </div>
 
-            <!-- Select file button (hidden during drag-over) -->
+            <!-- Select-file button -->
             <Transition name="fade">
                 <div v-if="!isDragOver" class="drop-zone__actions">
-                    <button type="button" class="btn-primary btn-lg" :disabled="busy" tabindex="-1" aria-hidden="true"
-                        @click.stop="onSelectClick">
-                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm"
-                            aria-hidden="true">
-                            <path
-                                d="M10 2.5C10.4142 2.5 10.75 2.83579 10.75 3.25V9.25H16.75C17.1642 9.25 17.5 9.58579 17.5 10C17.5 10.4142 17.1642 10.75 16.75 10.75H10.75V16.75C10.75 17.1642 10.4142 17.5 10 17.5C9.58579 17.5 9.25 17.1642 9.25 16.75V10.75H3.25C2.83579 10.75 2.5 10.4142 2.5 10C2.5 9.58579 2.83579 9.25 3.25 9.25H9.25V3.25C9.25 2.83579 9.58579 2.5 10 2.5Z"
-                                fill="currentColor" />
-                        </svg>
-                        Select PDF
+                    <button type="button" class="btn-primary btn-lg drop-zone__btn" :disabled="busy" tabindex="-1"
+                        aria-hidden="true" @click.stop="onSelectClick">
+                        <span class="drop-zone__btn-prompt" aria-hidden="true">&gt;</span>
+                        select-file
                     </button>
                 </div>
             </Transition>
         </div>
 
-        <!-- Dashed border (rendered as SVG for crisp rendering at all DPIs) -->
+        <!-- SVG dashed border (terminal green on drag-over) -->
         <svg class="drop-zone__border" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="19" ry="19" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-dasharray="8 5" />
+            <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="9" ry="9" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 4" />
         </svg>
     </div>
 
-    <!-- Hint text below the zone -->
+    <!-- Hint text -->
     <p class="drop-zone__hint" aria-live="polite">
         <template v-if="isDragOver && !busy">
+            <span class="drop-zone__hint-prompt" aria-hidden="true">#</span>
             PDF files only
         </template>
         <template v-else>
-            Supports all PDF versions &nbsp;·&nbsp; Any number of pages
+            <span class="drop-zone__hint-prompt" aria-hidden="true">#</span>
+            accepts all pdf versions &nbsp;·&nbsp; any number of pages
         </template>
     </p>
 </div>
@@ -210,7 +197,7 @@ function onSelectClick(): void {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
     width: 100%;
 }
 
@@ -219,11 +206,11 @@ function onSelectClick(): void {
 .drop-zone {
     position: relative;
     width: 100%;
-    min-height: 280px;
+    min-height: 260px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     background: var(--color-surface-inset);
     cursor: pointer;
     overflow: hidden;
@@ -238,29 +225,29 @@ function onSelectClick(): void {
     box-shadow: var(--shadow-focus);
 }
 
-/* Drag-over state */
+/* Drag-over state — phosphor glow */
 .drop-zone--active {
-    background: var(--color-accent-subtle);
-    transform: scale(1.005);
+    background: rgba(57, 211, 83, 0.04);
+    transform: scale(1.004);
     box-shadow:
-        0 0 0 2px var(--color-accent),
-        0 8px 32px var(--color-accent-glow);
+        0 0 0 1px var(--color-accent),
+        0 0 28px rgba(57, 211, 83, 0.18);
 }
 
 /* Busy state */
 .drop-zone--busy {
     cursor: default;
-    opacity: 0.7;
+    opacity: 0.65;
 }
 
-/* ── Animated glow overlay (drag-over) ───────────────────────────────────────── */
+/* ── Glow overlay (drag-over) ────────────────────────────────────────────────── */
 
 .drop-zone__glow {
     position: absolute;
-    inset: -40px;
+    inset: -60px;
     background: radial-gradient(ellipse at center,
-            var(--color-accent-glow) 0%,
-            transparent 70%);
+            rgba(57, 211, 83, 0.12) 0%,
+            transparent 65%);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--duration-normal) var(--ease-out);
@@ -278,13 +265,14 @@ function onSelectClick(): void {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    color: var(--color-border-strong);
+    color: var(--color-border);
     transition: color var(--duration-normal) var(--ease-out);
     overflow: visible;
 }
 
 .drop-zone--active .drop-zone__border {
     color: var(--color-accent);
+    filter: drop-shadow(0 0 4px rgba(57, 211, 83, 0.5));
 }
 
 /* ── Content ──────────────────────────────────────────────────────────────────── */
@@ -299,87 +287,153 @@ function onSelectClick(): void {
     padding: var(--space-8) var(--space-6);
     text-align: center;
     pointer-events: none;
-    /* let parent handle click */
 }
 
-/* Re-enable pointer events for the button only */
 .drop-zone__actions {
     pointer-events: auto;
 }
 
-/* ── Icon ──────────────────────────────────────────────────────────────────────── */
+/* ── Icon ─────────────────────────────────────────────────────────────────────── */
 
 .drop-zone__icon {
     color: var(--color-text-tertiary);
     transition: color var(--duration-normal) var(--ease-out);
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
 }
 
 .drop-zone--active .drop-zone__icon {
     color: var(--color-accent);
-    filter: drop-shadow(0 4px 16px var(--color-accent-glow));
+}
+
+/* Terminal box around the icon */
+.drop-zone__icon-box {
+    position: relative;
+    display: inline-flex;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    transition:
+        border-color var(--duration-normal) var(--ease-out),
+        box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.drop-zone--active .drop-zone__icon-box {
+    border-color: rgba(57, 211, 83, 0.35);
+    box-shadow: 0 0 12px rgba(57, 211, 83, 0.15);
 }
 
 .icon-body {
-    opacity: 0.18;
+    opacity: 0.12;
 }
 
 .icon-fold {
-    opacity: 0.10;
+    opacity: 0.06;
 }
 
-.icon-band {
-    opacity: 0.75;
-}
-
-.icon-line {
+.icon-fold-stroke {
     opacity: 0.15;
 }
 
+.icon-band {
+    opacity: 0.70;
+}
+
+.icon-label {
+    opacity: 0.85;
+    fill: currentColor;
+}
+
+.icon-line {
+    opacity: 0.14;
+}
+
 .drop-zone--active .icon-body {
-    opacity: 0.22;
+    opacity: 0.18;
 }
 
 .drop-zone--active .icon-band {
-    opacity: 0.90;
+    opacity: 0.88;
 }
 
 /* ── Labels ───────────────────────────────────────────────────────────────────── */
 
 .drop-zone__label {
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: var(--space-2);
 }
 
-.drop-zone__label-main {
+.drop-zone__label-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+
+/* Terminal prompt character: $ or > */
+.drop-zone__label-prompt {
     font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    line-height: 1;
+    text-shadow: 0 0 8px var(--color-accent-glow);
+    flex-shrink: 0;
+}
+
+.drop-zone__label-main {
+    font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: -0.01em;
     color: var(--color-text-primary);
     transition: color var(--duration-normal) var(--ease-out);
+    font-family: var(--font-mono);
 }
 
 .drop-zone__label-main--active {
     color: var(--color-accent);
+    text-shadow: 0 0 10px rgba(57, 211, 83, 0.3);
 }
 
 .drop-zone__label-sub {
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     color: var(--color-text-tertiary);
     font-weight: var(--weight-regular);
+    font-family: var(--font-mono);
+}
+
+.drop-zone__ellipsis {
+    display: inline-block;
+    letter-spacing: 0.05em;
+}
+
+/* ── Button ───────────────────────────────────────────────────────────────────── */
+
+.drop-zone__btn {
+    gap: var(--space-2);
+}
+
+.drop-zone__btn-prompt {
+    font-weight: var(--weight-bold);
+    opacity: 0.8;
 }
 
 /* ── Hint ─────────────────────────────────────────────────────────────────────── */
 
 .drop-zone__hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     font-size: var(--text-xs);
     color: var(--color-text-quaternary);
-    font-weight: var(--weight-regular);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    line-height: var(--leading-normal);
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
     text-align: center;
+    line-height: var(--leading-normal);
+}
+
+.drop-zone__hint-prompt {
+    color: var(--color-text-quaternary);
+    opacity: 0.6;
 }
 </style>

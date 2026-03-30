@@ -2,18 +2,11 @@
 /**
  * ProgressView — "processing" state view.
  *
- * Displays a live progress bar and per-page status while the Rust backend
- * is splitting the PDF.  All data flows in via props; this component owns
- * no state of its own — keeping it purely presentational and easy to test.
+ * Terminal aesthetic: mimics the output of a long-running CLI command.
+ * The progress bar is rendered as ASCII block characters (`█░`) and the
+ * status lines appear like streamed stdout.
  *
- * Props
- * ─────
- * • `percent`      — 0–100 integer driving the progress bar fill width.
- * • `current`      — 1-based count of pages completed so far.
- * • `total`        — total number of pages to process.
- * • `currentFile`  — filename of the most-recently completed page,
- *                    e.g. `"page_0032.pdf"`.  Empty string before first event.
- * • `fileName`     — basename of the source PDF being processed.
+ * Props / computed logic unchanged — only the visual presentation is redesigned.
  */
 
 import { computed } from 'vue'
@@ -35,10 +28,6 @@ const props = defineProps<{
 
 // ── Computed ───────────────────────────────────────────────────────────────────
 
-/**
- * Clamp percent to [0, 100] so CSS `width` is always valid even if the
- * backend emits an out-of-range value.
- */
 const clampedPercent = computed<number>(() =>
     Math.min(100, Math.max(0, props.percent)),
 )
@@ -51,10 +40,29 @@ const fractionLabel = computed<string>(() =>
     props.total > 0 ? `${props.current} / ${props.total}` : '…',
 )
 
+/** True before the first progress event arrives. */
+const isStarting = computed<boolean>(() => props.current === 0)
+
+/** True once all pages have been processed (finalising phase). */
+const isFinalising = computed<boolean>(
+    () => clampedPercent.value >= 100 && !isStarting.value,
+)
+
 /**
- * Array of "step" indicators rendered beneath the progress bar.
- * We show at most MAX_DOTS evenly-spaced markers so the user can visually
- * gauge where they are in a large document without cluttering the UI.
+ * ASCII block progress bar, e.g. `[████████████░░░░░░░░░░░░]`
+ *
+ * Uses U+2588 FULL BLOCK (█) for filled segments and U+2591 LIGHT SHADE (░)
+ * for empty segments.  The bar is 24 characters wide inside the brackets.
+ */
+const BAR_LENGTH = 24
+const asciiBar = computed<string>(() => {
+    const filled = Math.round((clampedPercent.value / 100) * BAR_LENGTH)
+    const empty = BAR_LENGTH - filled
+    return '█'.repeat(filled) + '░'.repeat(empty)
+})
+
+/**
+ * Step dots for a visual beat counter shown while waiting for the first event.
  */
 const MAX_DOTS = 20
 const stepDots = computed<boolean[]>(() => {
@@ -65,47 +73,56 @@ const stepDots = computed<boolean[]>(() => {
         return props.current >= threshold
     })
 })
-
-/** Estimated pages per second (rough throughput indicator). */
-const isStarting = computed<boolean>(() => props.current === 0)
 </script>
 
 <template>
 <div class="progress-view" role="status" aria-live="polite" aria-label="Splitting PDF…">
 
-    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <!-- ── Command header ─────────────────────────────────────────────────── -->
     <div class="progress-view__header">
-        <!-- Animated spinner -->
-        <div class="spinner-ring" aria-hidden="true">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
-                <!-- Track ring -->
-                <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="3" class="spinner-track" />
-                <!-- Animated arc -->
-                <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                    class="spinner-arc" :style="{
-                        strokeDashoffset: `${100 - clampedPercent}px`,
-                    }" />
-            </svg>
-
-            <!-- Percent label inside the ring -->
-            <span class="spinner-percent" aria-hidden="true">
-                {{ isStarting ? '…' : `${clampedPercent}%` }}
-            </span>
-        </div>
-
+        <span class="progress-view__prompt" aria-hidden="true">$</span>
         <div class="progress-view__title-group">
             <h2 class="progress-view__title">
-                Splitting PDF
+                split-pdf
+                <span class="progress-view__flag">--output</span>
+                <span class="progress-view__filename truncate" :title="fileName">{{ fileName }}</span>
             </h2>
-            <p class="progress-view__subtitle truncate" :title="fileName">
-                {{ fileName }}
+            <p class="progress-view__running">
+                <span class="progress-view__dot animate-pulse" aria-hidden="true">●</span>
+                <template v-if="isStarting">
+                    <span class="animate-pulse">preparing...</span>
+                </template>
+                <template v-else-if="isFinalising">
+                    <span>finalising<span class="animate-pulse">...</span></span>
+                </template>
+                <template v-else>
+                    <span>
+                        processing page
+                        <strong>{{ current }}</strong>
+                        of
+                        <strong>{{ total }}</strong>
+                    </span>
+                </template>
             </p>
         </div>
+
+        <!-- Percent badge -->
+        <span class="progress-view__pct" :class="{ 'progress-view__pct--finalising': isFinalising }" aria-hidden="true">
+            {{ isStarting ? '…' : `${clampedPercent}%` }}
+        </span>
     </div>
 
-    <!-- ── Progress bar ──────────────────────────────────────────────────── -->
+    <!-- ── ASCII progress bar ─────────────────────────────────────────────── -->
     <div class="progress-section">
-        <!-- Bar -->
+        <!-- ASCII bar label -->
+        <div class="ascii-bar-row" aria-hidden="true">
+            <span class="ascii-bar-bracket">[</span>
+            <span class="ascii-bar-fill" :class="{ 'ascii-bar-fill--glow': !isStarting }">{{ asciiBar }}</span>
+            <span class="ascii-bar-bracket">]</span>
+            <span class="ascii-bar-stats">{{ fractionLabel }}<span class="ascii-bar-unit"> pages</span></span>
+        </div>
+
+        <!-- Native progress element (sr + CSS bar) -->
         <div class="progress-track" role="progressbar" :aria-valuenow="clampedPercent" aria-valuemin="0"
             aria-valuemax="100" :aria-label="`${clampedPercent}% complete`">
             <div class="progress-fill" :style="{ width: fillWidth }" />
@@ -115,50 +132,23 @@ const isStarting = computed<boolean>(() => props.current === 0)
         <div v-if="stepDots.length > 1" class="step-dots" aria-hidden="true">
             <span v-for="(done, i) in stepDots" :key="i" class="step-dot" :class="{ 'step-dot--done': done }" />
         </div>
-
-        <!-- Fraction + file label -->
-        <div class="progress-labels">
-            <span class="progress-labels__fraction" aria-hidden="true">
-                {{ fractionLabel }}
-                <span class="progress-labels__unit"> pages</span>
-            </span>
-
-            <Transition name="fade">
-                <span v-if="currentFile" :key="currentFile" class="progress-labels__file truncate" aria-hidden="true">
-                    <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="11" height="11"
-                        aria-hidden="true">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M11.78 3.22a.75.75 0 0 1 0 1.06l-6 6a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06L5.25 8.69l5.47-5.47a.75.75 0 0 1 1.06 0Z"
-                            fill="currentColor" />
-                    </svg>
-                    {{ currentFile }}
-                </span>
-            </Transition>
-        </div>
     </div>
 
-    <!-- ── Status message ────────────────────────────────────────────────── -->
-    <div class="status-message">
-        <template v-if="isStarting">
-            <span class="status-message__text animate-pulse">
-                Preparing…
-            </span>
-        </template>
-        <template v-else-if="clampedPercent < 100">
-            <span class="status-message__text">
-                Processing page
-                <strong>{{ current }}</strong>
-                of
-                <strong>{{ total }}</strong>
-                <span class="status-message__ellipsis" aria-hidden="true">…</span>
-            </span>
-        </template>
-        <template v-else>
-            <span class="status-message__text status-message__text--finalising">
-                Finalising
-                <span class="animate-pulse">…</span>
-            </span>
-        </template>
+    <!-- ── Streamed output lines ──────────────────────────────────────────── -->
+    <div class="output-stream">
+        <!-- Most-recently completed file -->
+        <Transition name="fade">
+            <div v-if="currentFile" :key="currentFile" class="output-line output-line--ok">
+                <span class="output-line__check" aria-hidden="true">✓</span>
+                <span class="output-line__text truncate">{{ currentFile }}</span>
+            </div>
+        </Transition>
+
+        <!-- Idle / waiting message when no file yet -->
+        <div v-if="isStarting" class="output-line output-line--pending">
+            <span class="output-line__check animate-pulse" aria-hidden="true">…</span>
+            <span class="output-line__text">waiting for first page...</span>
+        </div>
     </div>
 
 </div>
@@ -171,59 +161,31 @@ const isStarting = computed<boolean>(() => props.current === 0)
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--space-8);
+    gap: var(--space-6);
     width: 100%;
-    padding: var(--space-4) 0;
+    padding: var(--space-2) 0;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────────── */
 
 .progress-view__header {
     display: flex;
-    align-items: center;
-    gap: var(--space-5);
+    align-items: flex-start;
+    gap: var(--space-3);
 }
 
-/* ── Spinner ring ─────────────────────────────────────────────────────────────── */
-
-.spinner-ring {
-    position: relative;
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    color: var(--color-accent);
-}
-
-.spinner-track {
-    opacity: 0.12;
-    color: var(--color-accent);
-}
-
-.spinner-arc {
-    stroke-dasharray: 100px;
-    /* strokeDashoffset bound via :style */
-    transform-origin: 50% 50%;
-    transform: rotate(-90deg);
-    transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
-    color: var(--color-accent);
-    filter: drop-shadow(0 0 4px var(--color-accent-glow));
-}
-
-.spinner-percent {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
+/* $ prompt */
+.progress-view__prompt {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
     font-weight: var(--weight-bold);
     color: var(--color-accent);
-    letter-spacing: -0.02em;
-    pointer-events: none;
+    text-shadow: 0 0 8px var(--color-accent-glow);
+    flex-shrink: 0;
+    line-height: 1.6;
 }
 
-/* ── Title group ──────────────────────────────────────────────────────────────── */
-
+/* Title group */
 .progress-view__title-group {
     display: flex;
     flex-direction: column;
@@ -233,26 +195,126 @@ const isStarting = computed<boolean>(() => props.current === 0)
 }
 
 .progress-view__title {
-    font-size: var(--text-xl);
+    font-size: var(--text-base);
     font-weight: var(--weight-semibold);
-    letter-spacing: var(--tracking-tight);
+    font-family: var(--font-mono);
     color: var(--color-text-primary);
-    line-height: var(--leading-tight);
+    line-height: var(--leading-snug);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4em;
 }
 
-.progress-view__subtitle {
-    font-size: var(--text-sm);
+.progress-view__flag {
     color: var(--color-text-tertiary);
     font-weight: var(--weight-regular);
-    max-width: 360px;
 }
 
-/* ── Progress section ─────────────────────────────────────────────────────────── */
+.progress-view__filename {
+    color: var(--color-accent);
+    max-width: 280px;
+}
+
+/* Running status */
+.progress-view__running {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    line-height: var(--leading-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.progress-view__running strong {
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-semibold);
+}
+
+.progress-view__dot {
+    font-size: 8px;
+    color: var(--color-accent);
+}
+
+/* Percent badge */
+.progress-view__pct {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-inset);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 2px var(--space-2);
+    flex-shrink: 0;
+    min-width: 48px;
+    text-align: center;
+    transition: color var(--duration-normal) var(--ease-out);
+    letter-spacing: 0.02em;
+}
+
+.progress-view__pct--finalising {
+    color: var(--color-accent);
+    border-color: rgba(57, 211, 83, 0.3);
+    text-shadow: 0 0 8px rgba(57, 211, 83, 0.3);
+}
+
+/* ── ASCII progress bar ───────────────────────────────────────────────────────── */
 
 .progress-section {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-2);
+}
+
+.ascii-bar-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.ascii-bar-bracket {
+    color: var(--color-border-strong);
+    font-weight: var(--weight-bold);
+}
+
+.ascii-bar-fill {
+    color: var(--color-text-quaternary);
+    letter-spacing: -0.02em;
+    transition: color var(--duration-slow) var(--ease-out);
+}
+
+.ascii-bar-fill--glow {
+    /* Use a text gradient for the filled part — done via clip */
+    color: var(--color-accent);
+    text-shadow: 0 0 6px rgba(57, 211, 83, 0.25);
+}
+
+.ascii-bar-stats {
+    margin-left: var(--space-3);
+    color: var(--color-text-secondary);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ascii-bar-unit {
+    color: var(--color-text-quaternary);
+    font-weight: var(--weight-regular);
+}
+
+/* Native progress bar (below the ASCII bar, acts as a precise visual fill) */
+.progress-section .progress-track {
+    height: 3px;
+    border-radius: 0;
+    background: var(--color-border-subtle);
+    border: none;
 }
 
 /* ── Step dots ────────────────────────────────────────────────────────────────── */
@@ -260,84 +322,64 @@ const isStarting = computed<boolean>(() => props.current === 0)
 .step-dots {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+    margin-top: var(--space-1);
 }
 
 .step-dot {
     flex: 1;
-    height: 3px;
-    border-radius: var(--radius-full);
-    background: var(--color-bg-secondary);
+    height: 2px;
+    border-radius: 1px;
+    background: var(--color-surface-inset);
     transition: background-color var(--duration-normal) var(--ease-out);
 }
 
 .step-dot--done {
     background: var(--color-accent);
-    opacity: 0.6;
+    opacity: 0.55;
+    box-shadow: 0 0 4px rgba(57, 211, 83, 0.3);
 }
 
-/* ── Progress labels ──────────────────────────────────────────────────────────── */
+/* ── Output stream ────────────────────────────────────────────────────────────── */
 
-.progress-labels {
+.output-stream {
+    min-height: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.output-line {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-}
-
-.progress-labels__fraction {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-    color: var(--color-text-primary);
-    letter-spacing: var(--tracking-tight);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.progress-labels__unit {
-    font-weight: var(--weight-regular);
-    color: var(--color-text-tertiary);
-}
-
-.progress-labels__file {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: var(--text-xs);
-    color: var(--color-success-text);
+    gap: var(--space-2);
     font-family: var(--font-mono);
-    letter-spacing: 0;
-    max-width: 260px;
-}
-
-/* ── Status message ───────────────────────────────────────────────────────────── */
-
-.status-message {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 24px;
-}
-
-.status-message__text {
     font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
-    font-weight: var(--weight-regular);
-    letter-spacing: var(--tracking-tight);
-    text-align: center;
+    line-height: var(--leading-normal);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid transparent;
 }
 
-.status-message__text strong {
-    color: var(--color-text-secondary);
-    font-weight: var(--weight-semibold);
+.output-line--ok {
+    color: var(--color-success-text);
+    background: var(--color-success-subtle);
+    border-left-color: var(--color-accent);
 }
 
-.status-message__ellipsis {
+.output-line--pending {
     color: var(--color-text-quaternary);
+    border-left-color: var(--color-border);
 }
 
-.status-message__text--finalising {
-    color: var(--color-accent);
-    font-weight: var(--weight-medium);
+.output-line__check {
+    flex-shrink: 0;
+    font-weight: var(--weight-bold);
+    font-size: 11px;
+}
+
+.output-line__text {
+    flex: 1;
+    min-width: 0;
 }
 </style>
