@@ -646,26 +646,32 @@ input[type="search"]:focus {
 
 .view-enter-active,
 .view-leave-active {
+    /* Absolute positioning during the transition prevents any layout shift:
+       the transitioning view floats above its sibling without displacing them. */
+    position: absolute;
+    inset: 0;
     transition:
-        opacity var(--duration-normal) var(--ease-out),
-        transform var(--duration-normal) var(--ease-out);
+        opacity 240ms var(--ease-out),
+        transform 240ms var(--ease-out);
+    will-change: opacity, transform;
 }
 
 .view-enter-from {
     opacity: 0;
-    transform: translateY(8px) scale(0.99);
+    transform: translateY(6px);
 }
 
 .view-leave-to {
     opacity: 0;
-    transform: translateY(-4px) scale(1.005);
+    transform: translateY(-4px);
 }
 
 /* ── Fade transition ──────────────────────────────────────────────────────────── */
 
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity var(--duration-normal) var(--ease-out);
+    transition: opacity 200ms var(--ease-out);
+    will-change: opacity;
 }
 
 .fade-enter-from,
@@ -678,31 +684,33 @@ input[type="search"]:focus {
 .scale-enter-active,
 .scale-leave-active {
     transition:
-        opacity var(--duration-normal) var(--ease-spring),
-        transform var(--duration-normal) var(--ease-spring);
+        opacity 220ms var(--ease-out),
+        transform 220ms var(--ease-out);
+    will-change: opacity, transform;
 }
 
 .scale-enter-from {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.94);
 }
 
 .scale-leave-to {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.97);
 }
 
 /* ── Slide-up list-item stagger ───────────────────────────────────────────────── */
 
 .list-item-enter-active {
     transition:
-        opacity var(--duration-slow) var(--ease-out),
-        transform var(--duration-slow) var(--ease-spring);
+        opacity 260ms var(--ease-out),
+        transform 260ms var(--ease-out);
+    will-change: opacity, transform;
 }
 
 .list-item-enter-from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
 }
 
 /* ── Pulse (loading indicators) ───────────────────────────────────────────────── */

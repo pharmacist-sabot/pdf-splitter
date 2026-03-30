@@ -131,8 +131,11 @@ async function onDismiss(): Promise<void> {
     <main class="app__main" role="main">
 
         <!-- App wordmark — terminal prompt style -->
-        <Transition name="fade">
-            <div v-if="showSubtitle" class="app__wordmark">
+        <!-- Wrapper stays in DOM always; CSS max-height + padding-bottom animate
+             to 0 so the layout collapses smoothly instead of jumping when
+             v-if would remove the element after a fade-out. -->
+        <div class="app__wordmark-wrapper" :class="{ 'app__wordmark-wrapper--hidden': !showSubtitle }">
+            <div class="app__wordmark">
                 <!-- >_ terminal icon -->
                 <div class="app__logo" aria-hidden="true">
                     <span class="app__logo-bracket">[</span><span class="app__logo-slash">/</span><span
@@ -150,7 +153,7 @@ async function onDismiss(): Promise<void> {
                     </p>
                 </div>
             </div>
-        </Transition>
+        </div>
 
         <!-- ── State views ──────────────────────────────────────────────── -->
         <div class="app__content">
@@ -283,9 +286,34 @@ async function onDismiss(): Promise<void> {
     display: flex;
     flex-direction: column;
     padding: var(--space-4) var(--space-8) var(--space-3);
-    gap: var(--space-4);
+    /* gap removed — spacing is owned by .app__wordmark-wrapper's padding-bottom
+       so it collapses to 0 together with the wordmark height */
     overflow: hidden;
     min-height: 0;
+}
+
+/* ── Wordmark wrapper — smooth show/hide without layout jump ──────────────────── */
+
+.app__wordmark-wrapper {
+    flex-shrink: 0;
+    overflow: hidden;
+    /* generous upper bound; actual content is ≈50 px */
+    max-height: 100px;
+    /* padding-bottom acts as the gap between wordmark and content area,
+       and animates to 0 when collapsing so no extra space remains */
+    padding-bottom: var(--space-4);
+    opacity: 1;
+    transition:
+        max-height 280ms var(--ease-out),
+        padding-bottom 280ms var(--ease-out),
+        opacity 180ms var(--ease-out);
+}
+
+.app__wordmark-wrapper--hidden {
+    max-height: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ── Wordmark — terminal prompt ───────────────────────────────────────────────── */
@@ -294,7 +322,6 @@ async function onDismiss(): Promise<void> {
     display: flex;
     align-items: center;
     gap: var(--space-4);
-    flex-shrink: 0;
     padding-bottom: var(--space-1);
     border-bottom: 1px solid var(--color-border-subtle);
 }
@@ -381,6 +408,9 @@ async function onDismiss(): Promise<void> {
     flex-direction: column;
     min-height: 0;
     position: relative;
+    /* clips absolutely-positioned views during transitions so they
+       never bleed outside the content area */
+    overflow: hidden;
 }
 
 /* ── Individual state views ───────────────────────────────────────────────────── */
