@@ -73,5 +73,16 @@ coverage/
 *.orig
 .cache/
 
-# ── Legacy CLI (keep source, ignore build) ───────────────────────────────────
-_legacy/cli/target/
+# ── Legacy CLI (fully removed from the project) ──────────────────────────────
+_legacy/
+
+# ── Sample / test input files ─────────────────────────────────────────────────
+input/
+
+# ── Mobile platform icons (macOS-only desktop app) ───────────────────────────
+src-tauri/icons/android/
+src-tauri/icons/ios/
+
+# ── Windows Store icons (not relevant for macOS desktop) ─────────────────────
+src-tauri/icons/Square*Logo.png
+src-tauri/icons/StoreLogo.png
