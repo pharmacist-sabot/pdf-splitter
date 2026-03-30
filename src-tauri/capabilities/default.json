@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "default",
+  "description": "Default capability set for PDF Splitter – grants the renderer the minimum permissions it needs to operate.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-focus",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "opener:allow-open-url",
+    "opener:allow-reveal-item-in-dir"
+  ]
+}

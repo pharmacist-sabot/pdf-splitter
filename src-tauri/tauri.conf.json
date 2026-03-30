@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+
+  "productName": "PDF Splitter",
+  "version": "1.0.0",
+  "identifier": "com.pdfsplitter.app",
+
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+
+  "app": {
+    "windows": [
+      {
+        "title": "PDF Splitter",
+        "width": 720,
+        "height": 560,
+        "minWidth": 720,
+        "minHeight": 560,
+        "maxWidth": 720,
+        "maxHeight": 560,
+        "resizable": false,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "acceptFirstMouse": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: https://asset.localhost"
+    }
+  },
+
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Split PDF files into individual pages.",
+    "longDescription": "PDF Splitter is a fast, beautiful macOS desktop application that takes any multi-page PDF document and extracts each page into its own individual PDF file. Built with Tauri and Rust for maximum performance.",
+    "copyright": "Copyright © 2025 PDF Splitter Contributors. MIT License.",
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "signingIdentity": null,
+      "entitlements": null,
+      "exceptionDomain": null,
+      "frameworks": [],
+      "dmg": {
+        "background": null,
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        },
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        }
+      }
+    }
+  }
+}

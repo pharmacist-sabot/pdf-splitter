@@ -1,0 +1,65 @@
+[package]
+name = "pdf-splitter"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.80"
+description = "A fast, beautiful macOS desktop app for splitting PDF files into individual pages."
+authors = ["PDF Splitter Contributors"]
+license = "MIT"
+repository = "https://github.com/yourusername/pdf-splitter"
+readme = "../README.md"
+
+# Required by Tauri – the crate must expose both a cdylib (for the app) and
+# an rlib (so integration tests can link against it).
+[lib]
+name = "pdf_splitter_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# ── Build dependencies ────────────────────────────────────────────────────────
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+# ── Runtime dependencies ──────────────────────────────────────────────────────
+
+[dependencies]
+# Tauri core – macOS target only needs the default feature set.
+tauri = { version = "2", features = [] }
+
+# Official Tauri plugins used by the app.
+tauri-plugin-dialog  = "2"
+tauri-plugin-opener  = "2"
+
+# PDF processing
+lopdf = "0.39"
+
+# Parallel page processing
+rayon = "1"
+
+# Error handling
+thiserror = "2"
+
+# Serialisation (Tauri commands pass data as JSON)
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# ── Dev / test dependencies ───────────────────────────────────────────────────
+
+[dev-dependencies]
+tempfile = "3"
+
+# ── Profile tuning ────────────────────────────────────────────────────────────
+
+[profile.release]
+# Optimise aggressively for the shipped macOS binary.
+opt-level     = 3
+lto           = "thin"
+codegen-units = 1
+strip         = true
+panic         = "abort"
+
+[profile.dev]
+# Faster incremental builds during development.
+opt-level     = 0
+debug         = true
+incremental   = true

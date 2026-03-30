@@ -1,0 +1,29 @@
+{
+  "name": "pdf-splitter",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A fast, beautiful macOS desktop app for splitting PDF files into individual pages.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-dialog": "^2.2.1",
+    "@tauri-apps/plugin-opener": "^2.2.6",
+    "vue": "^3.5.16"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vue-tsc": "^2.2.10"
+  }
+}
