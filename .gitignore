@@ -1,34 +1,30 @@
-# =============================================================================
-# PDF Splitter – Tauri + Vue macOS Desktop App
-# =============================================================================
-
-# ── Rust / Cargo ─────────────────────────────────────────────────────────────
+# Rust / Cargo
 /target
 src-tauri/target
 _legacy/cli/target
 Cargo.lock
 **/*.rs.bk
 
-# ── Node.js / npm ─────────────────────────────────────────────────────────────
+# Node.js / npm
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# ── Vite / Build outputs ──────────────────────────────────────────────────────
+# Vite / Build outputs
 dist/
 dist-ssr/
 *.local
 
-# ── Tauri ────────────────────────────────────────────────────────────────────
+# Tauri
 # Build output bundles (DMG, app bundle, etc.)
 src-tauri/target/
 # WiX toolset (Windows – not used here but exclude anyway)
 *.wixobj
 *.wixpdb
 
-# ── macOS ────────────────────────────────────────────────────────────────────
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -37,7 +33,7 @@ src-tauri/target/
 .Trashes
 .fseventsd
 
-# ── Editors / IDEs ───────────────────────────────────────────────────────────
+# Editors / IDEs
 # VSCode
 .vscode/*
 !.vscode/extensions.json
@@ -56,33 +52,33 @@ src-tauri/target/
 *~
 .netrwhist
 
-# ── Environment / Secrets ────────────────────────────────────────────────────
+# Environment / Secrets
 .env
 .env.*
 !.env.example
 
-# ── Test artifacts ───────────────────────────────────────────────────────────
+# Test artifacts
 coverage/
 *.lcov
 /test-results/
 
-# ── Temporary / Misc ─────────────────────────────────────────────────────────
+# Temporary / Misc
 *.log
 *.tmp
 *.bak
 *.orig
 .cache/
 
-# ── Legacy CLI (fully removed from the project) ──────────────────────────────
+# Legacy CLI
 _legacy/
 
-# ── Sample / test input files ─────────────────────────────────────────────────
+# Sample / test input files
 input/
 
-# ── Mobile platform icons (macOS-only desktop app) ───────────────────────────
+# Mobile platform icons
 src-tauri/icons/android/
 src-tauri/icons/ios/
 
-# ── Windows Store icons (not relevant for macOS desktop) ─────────────────────
+# Windows Store icons
 src-tauri/icons/Square*Logo.png
 src-tauri/icons/StoreLogo.png
