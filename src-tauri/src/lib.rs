@@ -73,6 +73,7 @@ pub fn run() {
         // in `commands.rs` must appear here.
         .invoke_handler(tauri::generate_handler![
             commands::get_page_count,
+            commands::get_file_info,
             commands::pick_pdf_file,
             commands::pick_output_dir,
             commands::split_pdf,

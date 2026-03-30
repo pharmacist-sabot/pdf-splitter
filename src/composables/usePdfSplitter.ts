@@ -7,7 +7,7 @@
  * * Manage the application state machine (`idle` → `ready` → `processing`
  *   → `complete` / `error`).
  * * Invoke Tauri commands (`pick_pdf_file`, `pick_output_dir`,
- *   `get_page_count`, `split_pdf`, `reveal_in_finder`).
+ *   `get_file_info`, `split_pdf`, `reveal_in_finder`).
  * * Subscribe to `split://progress` events and surface them reactively.
  * * Derive convenient display values (progress percentage, default output
  *   directory, formatted file size, etc.) so components stay declarative.
@@ -40,6 +40,17 @@ import {
   basename,
   formatDuration,
 } from '@/types'
+
+// ── Tauri command response types ──────────────────────────────────────────────
+
+/**
+ * Response from the `get_file_info` Tauri command.
+ * Mirrors `commands::FileInfo` in `src-tauri/src/commands.rs`.
+ */
+interface FileInfoResponse {
+  pageCount: number
+  sizeBytes: number
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -191,28 +202,15 @@ export function usePdfSplitter() {
       const path = await invoke<string | null>('pick_pdf_file')
       if (!path) return // User cancelled — no state change.
 
-      // Fetch page count to validate the file and enrich the UI.
-      const pageCount = await invoke<number>('get_page_count', { path })
-
-      // Estimate file size via a small stat-like trick:
-      // we ask the OS for the file size through the Tauri FS API if available,
-      // otherwise fall back to 0 (the UI gracefully hides the size field).
-      let sizeBytes = 0
-      try {
-        const { stat } = await import('@tauri-apps/plugin-fs').catch(() => ({ stat: null }))
-        if (stat) {
-          const meta = await stat(path)
-          sizeBytes = meta.size ?? 0
-        }
-      } catch {
-        // Non-critical — size display is optional.
-      }
+      // `get_file_info` returns both page count and file size in one round-trip,
+      // eliminating the need for `@tauri-apps/plugin-fs` in the renderer.
+      const info = await invoke<FileInfoResponse>('get_file_info', { path })
 
       fileInfo.value = {
         path,
         name: basename(path),
-        sizeBytes,
-        pageCount,
+        sizeBytes: info.sizeBytes,
+        pageCount: info.pageCount,
       }
 
       outputDir.value = defaultOutputDir(path)

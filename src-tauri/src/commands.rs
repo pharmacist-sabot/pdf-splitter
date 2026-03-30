@@ -14,13 +14,33 @@
 //! * **Typed errors**: every command returns `Result<T, crate::pdf::PdfError>`
 //!   which Tauri serialises as `{ kind, message }` JSON for the frontend to
 //!   pattern-match on.
+//!
+//! * **Self-contained file info**: [`get_file_info`] returns both page count
+//!   and file size from Rust so the renderer never needs the `plugin-fs`
+//!   dependency just to read metadata.
 
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use tauri::{AppHandle, Emitter, Runtime};
 use tauri_plugin_dialog::FilePath;
 
 use crate::pdf::{self, PageProgress, PdfError, SplitRequest, SplitResult};
+
+// ── Additional response types ─────────────────────────────────────────────────
+
+/// Metadata for a PDF file returned by [`get_file_info`].
+///
+/// Combines page count (from [`pdf::get_page_count`]) and file size (from the
+/// filesystem) into a single round-trip so the frontend avoids two separate
+/// Tauri invocations.
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileInfo {
+    /// Number of pages in the document.
+    pub page_count: u32,
+    /// File size in bytes (0 if the metadata read fails for any reason).
+    pub size_bytes: u64,
+}
 
 // ── Event identifiers ─────────────────────────────────────────────────────────
 
@@ -68,6 +88,31 @@ fn file_path_to_string(fp: FilePath) -> String {
 #[tauri::command]
 pub fn get_page_count(path: String) -> Result<u32, PdfError> {
     pdf::get_page_count(&PathBuf::from(path))
+}
+
+/// Return both page count and file size for the PDF at `path` in a single
+/// round-trip.
+///
+/// This avoids the need for the renderer to import `@tauri-apps/plugin-fs`
+/// solely to read file metadata: all I/O happens in Rust and the result is
+/// serialised as `{ pageCount, sizeBytes }` JSON.
+///
+/// The `sizeBytes` field falls back to `0` if the filesystem metadata read
+/// fails (e.g. a race where the file is removed between selection and the
+/// metadata call); the UI handles this gracefully by hiding the size display.
+///
+/// # Errors
+///
+/// Forwards [`PdfError`] for missing files, corrupt PDFs, and empty documents.
+#[tauri::command]
+pub fn get_file_info(path: String) -> Result<FileInfo, PdfError> {
+    let pb = PathBuf::from(path);
+    let page_count = pdf::get_page_count(&pb)?;
+    let size_bytes = fs::metadata(&pb).map(|m| m.len()).unwrap_or(0);
+    Ok(FileInfo {
+        page_count,
+        size_bytes,
+    })
 }
 
 /// Open a native file-picker dialog pre-filtered to PDF files.
@@ -205,6 +250,16 @@ mod tests {
     #[test]
     fn get_page_count_missing_file_returns_error() {
         let result = get_page_count("/no/such/file.pdf".to_owned());
+        assert!(
+            matches!(result, Err(PdfError::FileNotFound { .. })),
+            "expected FileNotFound, got: {result:?}"
+        );
+    }
+
+    /// `get_file_info` with a non-existent path must return `FileNotFound`.
+    #[test]
+    fn get_file_info_missing_file_returns_error() {
+        let result = get_file_info("/no/such/file.pdf".to_owned());
         assert!(
             matches!(result, Err(PdfError::FileNotFound { .. })),
             "expected FileNotFound, got: {result:?}"

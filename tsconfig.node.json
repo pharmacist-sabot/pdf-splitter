@@ -6,8 +6,8 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true
+    "composite": true,
+    "skipLibCheck": true,
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts"],
 }
