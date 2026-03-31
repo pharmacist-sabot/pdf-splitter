@@ -1,25 +1,4 @@
 //! Tauri application entry point.
-//!
-//! # Responsibilities
-//!
-//! * Bootstrap the Tauri [`Builder`](tauri::Builder).
-//! * Register all official Tauri plugins used by the app.
-//! * Register every `#[tauri::command]` handler exported from
-//!   [`commands`].
-//!
-//! # Library vs binary
-//!
-//! `lib.rs` exports [`run`] as a public function so that:
-//!
-//! * `main.rs` (the binary entry-point) simply calls `pdf_splitter_lib::run()`.
-//! * Integration tests can call `run()` in a controlled environment without
-//!   re-compiling the whole binary.
-//!
-//! This split is the idiomatic Tauri 2 project layout and is required by the
-//! `[lib] crate-type = ["staticlib", "cdylib", "rlib"]` declaration in
-//! `Cargo.toml`.
-
-// ── Lint configuration ────────────────────────────────────────────────────────
 
 // Enforce a strict, idiomatic Rust style throughout the crate.
 #![deny(
@@ -37,7 +16,7 @@
     clippy::module_name_repetitions,
 )]
 
-// ── Module declarations ───────────────────────────────────────────────────────
+// module declarations
 
 /// Tauri command handlers (thin wrappers around the `pdf` pipeline).
 pub mod commands;
@@ -45,7 +24,7 @@ pub mod commands;
 /// Framework-agnostic PDF processing pipeline.
 pub mod pdf;
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// public api
 
 /// Build and run the Tauri application.
 ///
@@ -60,13 +39,12 @@ pub mod pdf;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        // ── Plugin registration ───────────────────────────────────────────
-        //
+        // Plugin registration
         // Plugins must be registered before `invoke_handler` so that their
         // commands are available when the renderer calls `invoke()`.
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        // ── Command registration ──────────────────────────────────────────
+        // Command registration
         //
         // `generate_handler!` is a Tauri macro that builds the dispatch table
         // from the list of `#[tauri::command]` functions.  Every public command
@@ -79,7 +57,7 @@ pub fn run() {
             commands::split_pdf,
             commands::reveal_in_finder,
         ])
-        // ── Launch ───────────────────────────────────────────────────────
+        // Launch
         .run(tauri::generate_context!())
         .expect("fatal: Tauri application failed to start");
 }

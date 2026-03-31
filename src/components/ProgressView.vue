@@ -1,65 +1,46 @@
 <script setup lang="ts">
-/**
- * ProgressView — "processing" state view.
- *
- * Terminal aesthetic: mimics the output of a long-running CLI command.
- * The progress bar is rendered as ASCII block characters (`█░`) and the
- * status lines appear like streamed stdout.
- *
- * Props / computed logic unchanged — only the visual presentation is redesigned.
- */
-
 import { computed } from 'vue'
 
-// ── Props ──────────────────────────────────────────────────────────────────────
-
 const props = defineProps<{
-    /** Progress percentage (0–100). */
+    /* Progress percentage (0–100) */
     percent: number
-    /** Pages completed so far (1-based). */
+    /* Pages completed so far (1-based) */
     current: number
-    /** Total pages to process. */
+    /* Total pages to process */
     total: number
-    /** Filename of the most-recently written output page. */
+    /* Filename of the most-recently written output page */
     currentFile: string
-    /** Basename of the source PDF file. */
+    /* Basename of the source PDF file */
     fileName: string
 }>()
-
-// ── Computed ───────────────────────────────────────────────────────────────────
 
 const clampedPercent = computed<number>(() =>
     Math.min(100, Math.max(0, props.percent)),
 )
 
-/**
- * CSS transform for the progress fill element.
- *
- * Uses `scaleX()` instead of `width` so the animation is GPU-composited
- * (runs on the compositor thread without layout recalculation).
- */
 const fillTransform = computed<string>(() =>
     `scaleX(${clampedPercent.value / 100})`,
 )
 
-/** Human-readable fraction label, e.g. `"32 / 48"`. */
+
+/* Human-readable fraction label, e.g. `"32 / 48"` */
 const fractionLabel = computed<string>(() =>
     props.total > 0 ? `${props.current} / ${props.total}` : '…',
 )
 
-/** True before the first progress event arrives. */
+/* True before the first progress event arrives */
 const isStarting = computed<boolean>(() => props.current === 0)
 
-/** True once all pages have been processed (finalising phase). */
+/* True once all pages have been processed (finalising phase) */
 const isFinalising = computed<boolean>(
     () => clampedPercent.value >= 100 && !isStarting.value,
 )
 
-/**
+/*
  * ASCII block progress bar, e.g. `[████████████░░░░░░░░░░░░]`
  *
  * Uses U+2588 FULL BLOCK (█) for filled segments and U+2591 LIGHT SHADE (░)
- * for empty segments.  The bar is 24 characters wide inside the brackets.
+ * for empty segments.  The bar is 24 characters wide inside the brackets
  */
 const BAR_LENGTH = 24
 const asciiBar = computed<string>(() => {
@@ -68,9 +49,6 @@ const asciiBar = computed<string>(() => {
     return '█'.repeat(filled) + '░'.repeat(empty)
 })
 
-/**
- * Step dots for a visual beat counter shown while waiting for the first event.
- */
 const MAX_DOTS = 20
 const stepDots = computed<boolean[]>(() => {
     if (props.total <= 0) return []
@@ -85,7 +63,6 @@ const stepDots = computed<boolean[]>(() => {
 <template>
 <div class="progress-view" role="status" aria-live="polite" aria-label="Splitting PDF…">
 
-    <!-- ── Command header ─────────────────────────────────────────────────── -->
     <div class="progress-view__header">
         <span class="progress-view__prompt" aria-hidden="true">$</span>
         <div class="progress-view__title-group">
@@ -119,7 +96,6 @@ const stepDots = computed<boolean[]>(() => {
         </span>
     </div>
 
-    <!-- ── ASCII progress bar ─────────────────────────────────────────────── -->
     <div class="progress-section">
         <!-- ASCII bar label -->
         <div class="ascii-bar-row" aria-hidden="true">
@@ -141,7 +117,6 @@ const stepDots = computed<boolean[]>(() => {
         </div>
     </div>
 
-    <!-- ── Streamed output lines ──────────────────────────────────────────── -->
     <div class="output-stream">
         <!-- Most-recently completed file (no Vue Transition — avoids costly
              DOM mount/unmount at high event rates; CSS handles the visual) -->
@@ -161,8 +136,6 @@ const stepDots = computed<boolean[]>(() => {
 </template>
 
 <style scoped>
-/* ── View wrapper ─────────────────────────────────────────────────────────────── */
-
 .progress-view {
     display: flex;
     flex-direction: column;
@@ -171,8 +144,6 @@ const stepDots = computed<boolean[]>(() => {
     width: 100%;
     padding: var(--space-2) 0;
 }
-
-/* ── Header ───────────────────────────────────────────────────────────────────── */
 
 .progress-view__header {
     display: flex;
@@ -266,8 +237,6 @@ const stepDots = computed<boolean[]>(() => {
     text-shadow: 0 0 8px rgba(57, 211, 83, 0.3);
 }
 
-/* ── ASCII progress bar ───────────────────────────────────────────────────────── */
-
 .progress-section {
     display: flex;
     flex-direction: column;
@@ -325,8 +294,6 @@ const stepDots = computed<boolean[]>(() => {
     will-change: contents;
 }
 
-/* ── Step dots ────────────────────────────────────────────────────────────────── */
-
 .step-dots {
     display: flex;
     align-items: center;
@@ -347,8 +314,6 @@ const stepDots = computed<boolean[]>(() => {
     opacity: 0.55;
     box-shadow: 0 0 4px rgba(57, 211, 83, 0.3);
 }
-
-/* ── Output stream ────────────────────────────────────────────────────────────── */
 
 .output-stream {
     min-height: 32px;

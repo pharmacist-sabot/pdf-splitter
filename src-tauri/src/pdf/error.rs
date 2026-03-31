@@ -1,11 +1,6 @@
-//! Error types for the PDF processing pipeline.
-//!
-//! [`PdfError`] is the single error type used throughout the `pdf` module.
-//! It is serialisable so that Tauri can forward it to the renderer as JSON.
+// Error types for the PDF processing pipeline.
 
 use serde::Serialize;
-
-// ── Error definition ──────────────────────────────────────────────────────────
 
 /// All errors that can arise while splitting a PDF document.
 #[derive(Debug, thiserror::Error)]
@@ -31,12 +26,6 @@ pub enum PdfError {
     Internal(String),
 }
 
-// ── Tauri serialisation ───────────────────────────────────────────────────────
-
-/// Manual [`Serialize`] implementation so that [`PdfError`] can be returned
-/// from `#[tauri::command]` functions.  Tauri requires the error type to
-/// implement `Serialize`; we emit a plain `{ "error": "<message>" }` object
-/// which the frontend can display directly.
 impl Serialize for PdfError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -63,8 +52,6 @@ impl PdfError {
     }
 }
 
-// ── Convenience conversions ───────────────────────────────────────────────────
-
 impl From<String> for PdfError {
     fn from(msg: String) -> Self {
         Self::Internal(msg)
@@ -76,8 +63,6 @@ impl From<&str> for PdfError {
         Self::Internal(msg.to_owned())
     }
 }
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {

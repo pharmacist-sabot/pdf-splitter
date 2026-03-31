@@ -1,20 +1,10 @@
 /**
  * PDF Splitter – TypeScript type definitions.
- *
- * This file is the single source of truth for every type that crosses the
- * Tauri IPC boundary (Rust ↔ Vue renderer).  Types here mirror the `#[derive
- * (Serialize)]` structs in `src-tauri/src/` exactly; if the Rust structs
- * change, update this file to match.
  */
 
-// ── Tauri IPC payloads ────────────────────────────────────────────────────────
 
 /**
  * Serialised form of `pdf::PdfError` emitted by every fallible command.
- *
- * ```json
- * { "kind": "FileNotFound", "message": "File not found: /tmp/x.pdf" }
- * ```
  */
 export interface PdfError {
   /** Machine-readable discriminant — matches the Rust enum variant name. */
@@ -56,8 +46,6 @@ export interface SplitResult {
   elapsedMs: number
 }
 
-// ── Application state machine ─────────────────────────────────────────────────
-
 /**
  * Discrete states the application can be in.
  *
@@ -78,8 +66,6 @@ export type AppState =
   | 'complete'
   | 'error'
 
-// ── File metadata ─────────────────────────────────────────────────────────────
-
 /**
  * Metadata about the PDF file the user has selected, populated after
  * `get_page_count` returns successfully.
@@ -95,8 +81,6 @@ export interface PdfFileInfo {
   pageCount: number
 }
 
-// ── Split operation ───────────────────────────────────────────────────────────
-
 /**
  * Represents a split operation that is currently running.
  */
@@ -107,8 +91,6 @@ export interface SplitOperation {
    *  sub-directory was created automatically). */
   outputDir: string
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
  * Format `bytes` as a human-readable string, e.g. `"2.4 MB"`.

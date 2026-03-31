@@ -1,14 +1,4 @@
 <script setup lang="ts">
-/**
- * FileCard — "ready" state view.
- *
- * Terminal aesthetic: displays file metadata in a monospace layout that
- * mimics a `ls -la` or `file` command output.  The output-directory row
- * uses a `>` prompt prefix; the split button reads like a CLI command.
- *
- * Props / Events unchanged — only the visual presentation is redesigned.
- */
-
 defineProps<{
     fileName: string
     pageCount: number
@@ -39,7 +29,6 @@ function onChangeOutput(): void {
 <template>
 <div class="file-card">
 
-    <!-- ── File info row ─────────────────────────────────────────────────── -->
     <div class="file-info">
         <!-- PDF document icon -->
         <div class="file-icon" aria-hidden="true">
@@ -89,10 +78,8 @@ function onChangeOutput(): void {
         </button>
     </div>
 
-    <!-- ── Separator ─────────────────────────────────────────────────────── -->
     <div class="separator" role="separator" />
 
-    <!-- ── Output directory row ──────────────────────────────────────────── -->
     <div class="output-row">
         <div class="output-row__label-group">
             <!-- Terminal > prompt -->
@@ -110,10 +97,8 @@ function onChangeOutput(): void {
         </button>
     </div>
 
-    <!-- ── Separator ─────────────────────────────────────────────────────── -->
     <div class="separator" role="separator" />
 
-    <!-- ── Action row ─────────────────────────────────────────────────────── -->
     <div class="action-row">
         <!-- Page count badge -->
         <span class="badge badge-info page-badge">
@@ -143,8 +128,6 @@ function onChangeOutput(): void {
 </template>
 
 <style scoped>
-/* ── Card wrapper ─────────────────────────────────────────────────────────────── */
-
 .file-card {
     display: flex;
     flex-direction: column;
@@ -157,16 +140,12 @@ function onChangeOutput(): void {
     overflow: hidden;
 }
 
-/* ── File info row ────────────────────────────────────────────────────────────── */
-
 .file-info {
     display: flex;
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-4) var(--space-5);
 }
-
-/* ── PDF icon ─────────────────────────────────────────────────────────────────── */
 
 .file-icon {
     flex-shrink: 0;
@@ -195,8 +174,6 @@ function onChangeOutput(): void {
     opacity: 0.14;
 }
 
-/* ── Prompt character ─────────────────────────────────────────────────────────── */
-
 .file-prompt {
     font-family: var(--font-mono);
     font-size: var(--text-lg);
@@ -206,8 +183,6 @@ function onChangeOutput(): void {
     flex-shrink: 0;
     line-height: 1;
 }
-
-/* ── Metadata ─────────────────────────────────────────────────────────────────── */
 
 .file-meta {
     flex: 1;
@@ -267,8 +242,6 @@ function onChangeOutput(): void {
     line-height: 1;
 }
 
-/* ── Dismiss button ───────────────────────────────────────────────────────────── */
-
 .dismiss-btn {
     flex-shrink: 0;
     width: 28px;
@@ -284,8 +257,6 @@ function onChangeOutput(): void {
     background: var(--color-error-subtle);
     color: var(--color-error-text);
 }
-
-/* ── Output directory row ─────────────────────────────────────────────────────── */
 
 .output-row {
     display: flex;
@@ -358,8 +329,6 @@ function onChangeOutput(): void {
     box-shadow: 0 0 8px rgba(57, 211, 83, 0.1);
 }
 
-/* ── Action row ───────────────────────────────────────────────────────────────── */
-
 .action-row {
     display: flex;
     align-items: center;
@@ -372,8 +341,6 @@ function onChangeOutput(): void {
     font-size: var(--text-xs);
     font-family: var(--font-mono);
 }
-
-/* ── Split button ─────────────────────────────────────────────────────────────── */
 
 .split-btn {
     min-width: 148px;

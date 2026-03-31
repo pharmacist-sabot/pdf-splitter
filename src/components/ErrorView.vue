@@ -1,23 +1,11 @@
 <script setup lang="ts">
-/**
- * ErrorView — "error" state view.
- *
- * Terminal aesthetic: the error output mimics stderr from a CLI command.
- * The header shows `✗ <kind>` in red, the message is displayed in a
- * terminal code block, and the hint reads like a man-page note.
- *
- * Props / computed logic unchanged — only the visual presentation is redesigned.
- */
-
 import { computed } from 'vue'
 import type { PdfError } from '@/types'
 
-// ── Props & emits ──────────────────────────────────────────────────────────────
-
 const props = defineProps<{
-    /** Human-readable error description forwarded from `PdfError.message`. */
+    /* Human-readable error description forwarded from `PdfError.message` */
     message: string
-    /** Machine-readable error kind — used to render contextual guidance. */
+    /* Machine-readable error kind — used to render contextual guidance */
     kind?: PdfError['kind']
 }>()
 
@@ -25,8 +13,6 @@ const emit = defineEmits<{
     retry: []
     dismiss: []
 }>()
-
-// ── Computed ───────────────────────────────────────────────────────────────────
 
 const hint = computed<string>(() => {
     switch (props.kind) {
@@ -56,8 +42,6 @@ const kindLabel = computed<string>(() => {
     }
 })
 
-// ── Handlers ───────────────────────────────────────────────────────────────────
-
 function onRetry(): void {
     emit('retry')
 }
@@ -70,7 +54,6 @@ function onDismiss(): void {
 <template>
 <div class="error-view" role="alert" aria-live="assertive">
 
-    <!-- ── Error header (stderr line) ────────────────────────────────────── -->
     <div class="error-header">
         <span class="error-header__x" aria-hidden="true">✗</span>
         <div class="error-header__text">
@@ -80,7 +63,6 @@ function onDismiss(): void {
         </div>
     </div>
 
-    <!-- ── Error output block ─────────────────────────────────────────────── -->
     <div class="error-block">
         <!-- stderr label -->
         <div class="error-block__label" aria-hidden="true">
@@ -94,16 +76,13 @@ function onDismiss(): void {
         </p>
     </div>
 
-    <!-- ── Hint / note ────────────────────────────────────────────────────── -->
     <div class="error-note">
         <span class="error-note__prefix" aria-hidden="true">#</span>
         <p class="error-note__text">{{ hint }}</p>
     </div>
 
-    <!-- ── Separator ──────────────────────────────────────────────────────── -->
     <div class="separator error-separator" role="separator" />
 
-    <!-- ── Actions ────────────────────────────────────────────────────────── -->
     <div class="error-actions">
         <button type="button" class="btn-ghost error-actions__dismiss" @click="onDismiss">
             [dismiss]
@@ -124,8 +103,6 @@ function onDismiss(): void {
 </template>
 
 <style scoped>
-/* ── View wrapper ─────────────────────────────────────────────────────────────── */
-
 .error-view {
     display: flex;
     flex-direction: column;
@@ -133,8 +110,6 @@ function onDismiss(): void {
     width: 100%;
     padding: var(--space-2) 0;
 }
-
-/* ── Error header ─────────────────────────────────────────────────────────────── */
 
 .error-header {
     display: flex;
@@ -196,8 +171,6 @@ function onDismiss(): void {
     font-weight: var(--weight-regular);
 }
 
-/* ── Error block (stderr output) ──────────────────────────────────────────────── */
-
 .error-block {
     border: 1px solid rgba(248, 81, 73, 0.25);
     border-radius: var(--radius-md);
@@ -249,8 +222,6 @@ function onDismiss(): void {
     opacity: 0.75;
 }
 
-/* ── Hint / note ──────────────────────────────────────────────────────────────── */
-
 .error-note {
     display: flex;
     align-items: flex-start;
@@ -274,13 +245,9 @@ function onDismiss(): void {
     flex: 1;
 }
 
-/* ── Separator ────────────────────────────────────────────────────────────────── */
-
 .error-separator {
     background: var(--color-separator);
 }
-
-/* ── Actions ──────────────────────────────────────────────────────────────────── */
 
 .error-actions {
     display: flex;
@@ -337,8 +304,6 @@ function onDismiss(): void {
     color: rgba(13, 17, 23, 0.6);
     font-weight: var(--weight-bold);
 }
-
-/* ── Reduced motion ───────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
     .error-header__x {

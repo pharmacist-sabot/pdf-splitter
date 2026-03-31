@@ -1,23 +1,5 @@
 //! Tauri command handlers — the thin bridge between the renderer and the
 //! PDF processing pipeline.
-//!
-//! # Design principles
-//!
-//! * **Thin handlers**: commands do the absolute minimum themselves — validate
-//!   inputs, delegate to [`crate::pdf`], and return serialisable results.
-//!   Business logic lives in [`crate::pdf::splitter`].
-//!
-//! * **Structured progress**: long-running splits emit
-//!   [`EVENT_SPLIT_PROGRESS`] events so the UI can display a live progress bar
-//!   without polling.
-//!
-//! * **Typed errors**: every command returns `Result<T, crate::pdf::PdfError>`
-//!   which Tauri serialises as `{ kind, message }` JSON for the frontend to
-//!   pattern-match on.
-//!
-//! * **Self-contained file info**: [`get_file_info`] returns both page count
-//!   and file size from Rust so the renderer never needs the `plugin-fs`
-//!   dependency just to read metadata.
 
 use std::{fs, path::PathBuf};
 
@@ -26,7 +8,7 @@ use tauri_plugin_dialog::FilePath;
 
 use crate::pdf::{self, PageProgress, PdfError, SplitRequest, SplitResult};
 
-// ── Additional response types ─────────────────────────────────────────────────
+// Additional response types
 
 /// Metadata for a PDF file returned by [`get_file_info`].
 ///
@@ -42,7 +24,7 @@ pub struct FileInfo {
     pub size_bytes: u64,
 }
 
-// ── Event identifiers ─────────────────────────────────────────────────────────
+// Event identifiers
 
 /// Name of the Tauri event emitted after each page is written to disk.
 ///
@@ -57,7 +39,7 @@ pub const EVENT_SPLIT_PROGRESS: &str = "split://progress";
 /// The payload is [`SplitResult`] serialised as JSON.
 pub const EVENT_SPLIT_COMPLETE: &str = "split://complete";
 
-// ── Private helpers ───────────────────────────────────────────────────────────
+// Private helpers
 
 /// Convert a [`FilePath`] (Tauri dialog enum) to an owned `String`.
 ///
@@ -73,7 +55,7 @@ fn file_path_to_string(fp: FilePath) -> String {
     }
 }
 
-// ── Commands ──────────────────────────────────────────────────────────────────
+// Commands
 
 /// Return the number of pages in the PDF at `path`.
 ///
@@ -239,8 +221,6 @@ pub async fn reveal_in_finder<R: Runtime>(app: AppHandle<R>, path: String) -> Re
         .reveal_item_in_dir(&path)
         .map_err(|e| PdfError::Internal(e.to_string()))
 }
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {

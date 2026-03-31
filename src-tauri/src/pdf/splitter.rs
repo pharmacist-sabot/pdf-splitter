@@ -1,35 +1,4 @@
 //! Core PDF splitting logic.
-//!
-//! # Overview
-//!
-//! This module is intentionally **framework-agnostic**: it has no knowledge of
-//! Tauri, windows, or any UI concern.  Those live in the sibling
-//! [`commands`](crate::commands) module.  This keeps the splitting logic
-//! unit-testable in isolation and reusable in other contexts (CLI companion,
-//! server-side processing, etc.).
-//!
-//! # Strategy — Build New Document per Page
-//!
-//! Previous versions used a "Clone & Prune" approach: clone the entire source
-//! document, call `delete_pages()` to remove everything except the target page,
-//! then `prune_objects()`.  This is **unreliable** for complex real-world PDFs
-//! because `lopdf::Document::delete_pages()` can corrupt internal page tree
-//! references and shared resources, causing pages to show wrong content or
-//! appear out of order.
-//!
-//! The current approach is fundamentally more reliable:
-//!
-//! 1. **Load**   — parse the source document into memory *once*.
-//! 2. **For each page (sequentially)**:
-//!    - Create a **brand-new empty** `Document`.
-//!    - **Deep-copy** the target page's dictionary and **all** transitively
-//!      referenced objects (fonts, images, content streams, etc.) from the
-//!      source into the new document.
-//!    - Wire up the page tree (Catalog → Pages → [Page]).
-//!    - Save the single-page document to disk.
-//!
-//! This avoids `delete_pages()` entirely and ensures each output file is a
-//! clean, self-contained PDF with exactly the resources it needs.
 
 use std::{
     collections::{BTreeMap, HashSet},
@@ -41,8 +10,6 @@ use std::{
 use lopdf::{dictionary, Document, Object, ObjectId};
 
 use super::error::PdfError;
-
-// ── Public types ──────────────────────────────────────────────────────────────
 
 /// Parameters for a single split operation.
 #[derive(Debug, Clone)]
@@ -67,9 +34,6 @@ pub struct SplitResult {
 }
 
 /// Progress snapshot emitted after each page finishes processing.
-///
-/// The callback may be called from multiple rayon worker threads concurrently,
-/// so it must be both `Send` and `Sync`.
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PageProgress {
@@ -82,21 +46,7 @@ pub struct PageProgress {
     pub file_name: String,
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
-
-/// Return the number of pages in the PDF at `path` without performing a full
-/// split.
-///
-/// This is a lightweight pre-flight helper for the UI: load the document,
-/// query the page tree, and return the count.
-///
-/// # Errors
-///
-/// | Variant | Cause |
-/// |---------|-------|
-/// | [`PdfError::FileNotFound`] | `path` does not point to a regular file. |
-/// | [`PdfError::InvalidPdf`]   | The file cannot be parsed as a valid PDF.  |
-/// | [`PdfError::NoPages`]      | The document exists but has zero pages.    |
+/// Return the number of pages in the PDF at `path` without performing a full split.
 pub fn get_page_count(path: &Path) -> Result<u32, PdfError> {
     if !path.is_file() {
         return Err(PdfError::FileNotFound {
@@ -115,29 +65,7 @@ pub fn get_page_count(path: &Path) -> Result<u32, PdfError> {
         .map_err(|_| PdfError::Internal(format!("document has {count} pages, which overflows u32")))
 }
 
-/// Split every page of the PDF at `request.input_path` into its own PDF file
-/// inside `request.output_dir`.
-///
-/// Output files are named `page_0001.pdf`, `page_0002.pdf`, … in the original
-/// page order.
-///
-/// Processing is **sequential** to avoid the enormous memory overhead of
-/// cloning a large document N times in parallel.  For a 400-page PDF this is
-/// still fast (typically under 30 seconds) because each page extraction only
-/// copies the objects that page actually references.
-///
-/// `on_progress` is called **once per completed page**, always from the calling
-/// thread.  Events arrive in strictly increasing order so the UI never needs a
-/// monotonic guard.
-///
-/// # Errors
-///
-/// | Variant | Cause |
-/// |---------|-------|
-/// | [`PdfError::FileNotFound`] | `input_path` does not point to a regular file. |
-/// | [`PdfError::InvalidPdf`]   | The file cannot be parsed as a valid PDF.  |
-/// | [`PdfError::NoPages`]      | The document has zero pages to split.      |
-/// | [`PdfError::Io`]           | Directory creation or file write failure.  |
+/// Split every page of the PDF at `request.input_path` into its own PDF file inside `request.output_dir`.
 pub fn split_pdf<F>(request: SplitRequest, on_progress: F) -> Result<SplitResult, PdfError>
 where
     F: Fn(PageProgress) + Send + Sync,
@@ -149,19 +77,13 @@ where
         output_dir,
     } = request;
 
-    // ── Validate input ────────────────────────────────────────────────────────
-
     if !input_path.is_file() {
         return Err(PdfError::FileNotFound {
             path: input_path.display().to_string(),
         });
     }
 
-    // ── Prepare output directory ──────────────────────────────────────────────
-
     fs::create_dir_all(&output_dir)?;
-
-    // ── Load source document (once) ───────────────────────────────────────────
 
     let source = Document::load(&input_path)?;
 
@@ -176,8 +98,6 @@ where
     let sorted_pages: Vec<(u32, ObjectId)> = page_map.into_iter().collect();
     let total = u32::try_from(sorted_pages.len())
         .map_err(|_| PdfError::Internal("page count overflows u32".to_owned()))?;
-
-    // ── Sequential page extraction ────────────────────────────────────────────
 
     let mut output_files: Vec<PathBuf> = Vec::with_capacity(sorted_pages.len());
 
@@ -210,28 +130,20 @@ where
     })
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
-
 /// Build a new `Document` containing exactly one page by deep-copying a page
 /// and all its transitive object dependencies from the source document.
-///
-/// This constructs a valid PDF structure:
-///   Catalog → Pages → [Page]
-///
-/// All objects referenced by the page (fonts, images, content streams, `XObjects`,
-/// etc.) are recursively copied into the new document with remapped object IDs.
 fn build_single_page_document(
     source: &Document,
     page_object_id: ObjectId,
 ) -> Result<Document, PdfError> {
     let mut new_doc = Document::with_version("1.7");
 
-    // ── Step 1: Gather all objects transitively referenced by this page ────────
+    // Step 1: Gather all objects transitively referenced by this page
 
     let mut visited: HashSet<ObjectId> = HashSet::new();
     collect_referenced_objects(source, page_object_id, &mut visited);
 
-    // ── Step 2: Copy all gathered objects into the new document ────────────────
+    // Step 2: Copy all gathered objects into the new document
 
     // Map from old ObjectId → new ObjectId
     let mut id_map: BTreeMap<ObjectId, ObjectId> = BTreeMap::new();
@@ -252,13 +164,13 @@ fn build_single_page_document(
         }
     }
 
-    // ── Step 3: Find the new ID of the copied page object ─────────────────────
+    // Step 3: Find the new ID of the copied page object
 
     let new_page_id = *id_map
         .get(&page_object_id)
         .ok_or_else(|| PdfError::Internal("failed to find copied page object".to_owned()))?;
 
-    // ── Step 4: Build Pages node pointing to the single page ──────────────────
+    // Step 4: Build Pages node pointing to the single page
 
     let pages_id = new_doc.new_object_id();
 
@@ -274,7 +186,7 @@ fn build_single_page_document(
     };
     new_doc.objects.insert(pages_id, Object::Dictionary(pages));
 
-    // ── Step 5: Build Catalog pointing to Pages ───────────────────────────────
+    // Step 5: Build Catalog pointing to Pages
 
     let catalog = dictionary! {
         "Type"  => "Catalog",
@@ -283,7 +195,7 @@ fn build_single_page_document(
     let catalog_id = new_doc.add_object(Object::Dictionary(catalog));
     new_doc.trailer.set("Root", Object::Reference(catalog_id));
 
-    // ── Step 6: Clean up ──────────────────────────────────────────────────────
+    // Step 6: Clean up
 
     // Compact object IDs for smaller file sizes.
     new_doc.renumber_objects();
@@ -295,10 +207,6 @@ fn build_single_page_document(
 
 /// Recursively collect all `ObjectId`s that are transitively referenced
 /// starting from `root_id`.
-///
-/// This walks the entire object graph reachable from the given root,
-/// following all `Object::Reference` links.  It avoids infinite loops
-/// by tracking already-visited IDs.
 fn collect_referenced_objects(
     source: &Document,
     root_id: ObjectId,
@@ -356,10 +264,6 @@ fn collect_references_from_object(
 }
 
 /// Rewrite all `Object::Reference` values in `obj` using the provided ID map.
-///
-/// If a reference points to an ID not in the map, it is left unchanged (this
-/// can happen for well-known structural references that we handle separately,
-/// like /Parent).
 fn remap_references(obj: &mut Object, id_map: &BTreeMap<ObjectId, ObjectId>) {
     match obj {
         Object::Reference(id) => {
@@ -386,14 +290,14 @@ fn remap_references(obj: &mut Object, id_map: &BTreeMap<ObjectId, ObjectId>) {
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// Tests
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
 
-    // ── Test helpers ──────────────────────────────────────────────────────────
+    // Test helpers
 
     /// Build a minimal but structurally valid PDF with `page_count` blank
     /// pages using the lopdf API.  Panics on any internal error — this is
@@ -456,8 +360,6 @@ mod tests {
         path
     }
 
-    // ── get_page_count ────────────────────────────────────────────────────────
-
     #[test]
     fn get_page_count_returns_error_for_missing_file() {
         let result = get_page_count(Path::new("/nonexistent/path/file.pdf"));
@@ -481,8 +383,7 @@ mod tests {
         assert_eq!(get_page_count(&path).expect("count"), 5);
     }
 
-    // ── split_pdf — error paths ───────────────────────────────────────────────
-
+    // split_pdf — error paths
     #[test]
     fn split_pdf_returns_error_for_missing_input() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -499,7 +400,7 @@ mod tests {
         );
     }
 
-    // ── split_pdf — happy path ────────────────────────────────────────────────
+    // split_pdf — happy path
 
     #[test]
     fn split_pdf_produces_correct_number_of_files() {
@@ -614,7 +515,7 @@ mod tests {
         );
     }
 
-    // ── Progress callback ─────────────────────────────────────────────────────
+    // Progress callback
 
     #[test]
     fn split_pdf_progress_callback_is_called_for_every_page() {
@@ -696,7 +597,7 @@ mod tests {
         );
     }
 
-    // ── Output page integrity ─────────────────────────────────────────────────
+    // Output page integrity
 
     #[test]
     fn split_pdf_each_output_is_a_single_page_pdf() {
@@ -722,8 +623,6 @@ mod tests {
             );
         }
     }
-
-    // ── SplitResult fields ────────────────────────────────────────────────────
 
     #[test]
     fn split_result_elapsed_ms_is_accessible() {

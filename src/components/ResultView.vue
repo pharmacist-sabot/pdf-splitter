@@ -1,18 +1,6 @@
 <script setup lang="ts">
-/**
- * ResultView — "complete" state view.
- *
- * Terminal aesthetic: the success header reads like a CLI exit message
- * (`✓ done — 48 files · 1.2 s`), the file list mimics `ls -1` output
- * with monospace filenames and per-row reveal actions.
- *
- * Props / computed logic unchanged — only the visual presentation is redesigned.
- */
-
 import { ref, computed } from 'vue'
 import { basename } from '@/types'
-
-// ── Props & emits ──────────────────────────────────────────────────────────────
 
 const props = defineProps<{
     totalPages: number
@@ -26,11 +14,7 @@ const emit = defineEmits<{
     reset: []
 }>()
 
-// ── Local state ────────────────────────────────────────────────────────────────
-
 const hoveredIndex = ref<number | null>(null)
-
-// ── Computed ───────────────────────────────────────────────────────────────────
 
 const fileNames = computed<string[]>(() =>
     props.outputFiles.map((p) => basename(p)),
@@ -43,8 +27,6 @@ const summaryLabel = computed<string>(() => {
         ? `${pages} ${unit} · ${props.elapsedFormatted}`
         : `${pages} ${unit}`
 })
-
-// ── Actions ────────────────────────────────────────────────────────────────────
 
 function onRevealDir(): void {
     emit('reveal', props.outputDir)
@@ -62,7 +44,6 @@ function onReset(): void {
 <template>
 <div class="result-view">
 
-    <!-- ── Success header ─────────────────────────────────────────────────── -->
     <div class="result-header">
         <!-- ✓ check icon -->
         <div class="success-badge animate-bounce-in" aria-hidden="true">
@@ -107,7 +88,6 @@ function onReset(): void {
         </div>
     </div>
 
-    <!-- ── ls-style file list ─────────────────────────────────────────────── -->
     <div class="file-list-container">
         <!-- Directory label -->
         <div class="file-list__header" aria-hidden="true">
@@ -143,7 +123,6 @@ function onReset(): void {
         </div>
     </div>
 
-    <!-- ── Action row ─────────────────────────────────────────────────────── -->
     <div class="result-actions">
         <button type="button" class="btn-secondary result-actions__secondary" @click="onReset">
             <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm" aria-hidden="true">
@@ -169,16 +148,12 @@ function onReset(): void {
 </template>
 
 <style scoped>
-/* ── View wrapper ─────────────────────────────────────────────────────────────── */
-
 .result-view {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
     width: 100%;
 }
-
-/* ── Success header ───────────────────────────────────────────────────────────── */
 
 .result-header {
     display: flex;
@@ -237,8 +212,6 @@ function onReset(): void {
     line-height: var(--leading-normal);
 }
 
-/* ── Stat chips ───────────────────────────────────────────────────────────────── */
-
 .result-stats {
     display: flex;
     align-items: center;
@@ -271,8 +244,6 @@ function onReset(): void {
     color: var(--color-accent);
     border-color: rgba(57, 211, 83, 0.22);
 }
-
-/* ── File list container ──────────────────────────────────────────────────────── */
 
 .file-list-container {
     flex: 1;
@@ -310,8 +281,6 @@ function onReset(): void {
     min-width: 0;
 }
 
-/* ── File list ────────────────────────────────────────────────────────────────── */
-
 .file-list {
     height: 100%;
     overflow-y: auto;
@@ -323,8 +292,6 @@ function onReset(): void {
     flex-direction: column;
     padding: var(--space-1) 0;
 }
-
-/* ── File row ─────────────────────────────────────────────────────────────────── */
 
 .file-row {
     display: flex;
@@ -341,8 +308,6 @@ function onReset(): void {
     background: var(--color-surface-hover);
 }
 
-/* ── Line number ──────────────────────────────────────────────────────────────── */
-
 .file-row__lineno {
     flex-shrink: 0;
     font-family: var(--font-mono);
@@ -355,8 +320,6 @@ function onReset(): void {
     white-space: pre;
     user-select: none;
 }
-
-/* ── Filename ─────────────────────────────────────────────────────────────────── */
 
 .file-row__name {
     flex: 1;
@@ -373,8 +336,6 @@ function onReset(): void {
 .file-row:hover .file-row__name {
     color: var(--color-text-primary);
 }
-
-/* ── Per-row reveal button ────────────────────────────────────────────────────── */
 
 .file-row__reveal {
     position: absolute;
@@ -406,8 +367,6 @@ function onReset(): void {
 .file-row__reveal:active {
     transform: scale(0.96);
 }
-
-/* ── Action row ───────────────────────────────────────────────────────────────── */
 
 .result-actions {
     display: flex;

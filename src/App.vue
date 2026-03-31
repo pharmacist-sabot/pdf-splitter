@@ -1,26 +1,4 @@
 <script setup lang="ts">
-/**
- * App.vue — root component for PDF Splitter.
- *
- * # Terminal Design Language
- *
- * * Window chrome mimics a terminal emulator title bar.
- * * Wordmark uses a `$ pdf-splitter` prompt with a blinking cursor.
- * * State transitions are quick and crisp, matching terminal responsiveness.
- * * Subtle scanline overlay in `::before` evokes a classic CRT phosphor
- *   display without looking retro or ugly.
- *
- * # State machine
- *
- * ```
- * idle ──pick/drop──► ready ──split──► processing ──► complete
- *  ▲                    │                   │              │
- *  │                    │                  error           │
- *  │                    └──────────────────► error         │
- *  └──────────────────────────────────── reset ────────────┘
- * ```
- */
-
 import { computed } from 'vue'
 import { usePdfSplitter } from '@/composables/usePdfSplitter'
 import DropZone from '@/components/DropZone.vue'
@@ -29,10 +7,8 @@ import ProgressView from '@/components/ProgressView.vue'
 import ResultView from '@/components/ResultView.vue'
 import ErrorView from '@/components/ErrorView.vue'
 
-// ── Composable ─────────────────────────────────────────────────────────────────
 
 const {
-    // State
     state,
     fileInfo,
     outputDir,
@@ -40,12 +16,10 @@ const {
     result,
     error,
     isBusy,
-    // Computed
     fileSizeFormatted,
     progressPercent,
     elapsedFormatted,
     outputDirShort,
-    // Actions
     pickFile,
     pickOutputDir,
     startSplit,
@@ -53,12 +27,7 @@ const {
     reset,
 } = usePdfSplitter()
 
-// ── Derived ────────────────────────────────────────────────────────────────────
 
-/**
- * Terminal-style window title that updates with each state transition.
- * Mirrors the active operation so the window is identifiable in the Dock.
- */
 const windowTitle = computed<string>(() => {
     switch (state.value) {
         case 'idle': return '~/pdf-splitter'
@@ -70,34 +39,21 @@ const windowTitle = computed<string>(() => {
     }
 })
 
-/**
- * Show the wordmark (prompt + subtitle) only in idle and ready states.
- * Hidden during active operations to maximise content space.
- */
 const showSubtitle = computed<boolean>(
     () => state.value === 'idle' || state.value === 'ready',
 )
 
-// ── Event handlers ─────────────────────────────────────────────────────────────
 
-/**
- * Handle a PDF dropped onto the DropZone.
- *
- * TODO(v1.1): Add `load_pdf_from_path(path)` command on the Rust side so we
- * can load the dropped file directly without re-opening the dialog.
- */
 async function onDrop(path: string): Promise<void> {
     void path
     await pickFile()
 }
 
-/** User clicked "Try Again" in the error view. */
 async function onRetry(): Promise<void> {
     await reset()
     await pickFile()
 }
 
-/** User clicked "Dismiss" in the error view. */
 async function onDismiss(): Promise<void> {
     await reset()
 }
@@ -106,37 +62,20 @@ async function onDismiss(): Promise<void> {
 <template>
 <div class="app" :data-state="state">
 
-    <!-- ── Scanline overlay ────────────────────────────────────────────── -->
-    <!-- Pure-CSS phosphor-CRT scanlines; pointer-events disabled so they  -->
-    <!-- never interfere with interaction.                                  -->
-    <div class="app__scanlines" aria-hidden="true" />
+<div class="app__scanlines" aria-hidden="true" />
 
-    <!-- ── Terminal title bar ─────────────────────────────────────────── -->
-    <!--
         Tauri `titleBarStyle: "Overlay"` keeps native traffic lights in
         place while our HTML fills the full window.  We reserve the top
-        28 px as a drag region.
-    -->
     <header class="titlebar" data-tauri-drag-region aria-hidden="true">
-        <!-- Traffic-light placeholder (native buttons rendered by WebKit) -->
         <div class="titlebar__traffic-lights" data-no-drag />
-
-        <!-- Centred window title in terminal path format -->
         <span class="titlebar__title" aria-live="polite">
             {{ windowTitle }}
         </span>
     </header>
 
-    <!-- ── Main content ───────────────────────────────────────────────── -->
     <main class="app__main" role="main">
-
-        <!-- App wordmark — terminal prompt style -->
-        <!-- Wrapper stays in DOM always; CSS max-height + padding-bottom animate
-             to 0 so the layout collapses smoothly instead of jumping when
-             v-if would remove the element after a fade-out. -->
         <div class="app__wordmark-wrapper" :class="{ 'app__wordmark-wrapper--hidden': !showSubtitle }">
             <div class="app__wordmark">
-                <!-- >_ terminal icon -->
                 <div class="app__logo" aria-hidden="true">
                     <span class="app__logo-bracket">[</span><span class="app__logo-slash">/</span><span
                         class="app__logo-bracket">]</span>
@@ -155,7 +94,6 @@ async function onDismiss(): Promise<void> {
             </div>
         </div>
 
-        <!-- ── State views ──────────────────────────────────────────────── -->
         <div class="app__content">
             <Transition name="view" mode="out-in">
 
@@ -202,7 +140,7 @@ async function onDismiss(): Promise<void> {
 
     </main>
 
-    <!-- ── Footer ─────────────────────────────────────────────────────── -->
+    <!-- Footer -->
     <footer class="app__footer" role="contentinfo">
         <span class="app__footer-text">
             <span class="app__footer-comment" aria-hidden="true">#</span>
@@ -214,7 +152,7 @@ async function onDismiss(): Promise<void> {
 </template>
 
 <style scoped>
-/* ── App shell ────────────────────────────────────────────────────────────────── */
+/* App shell */
 
 .app {
     width: 720px;
@@ -226,7 +164,7 @@ async function onDismiss(): Promise<void> {
     background: var(--color-bg);
 }
 
-/* ── CRT scanline overlay ─────────────────────────────────────────────────────── */
+/* CRT scanline overlay */
 
 .app__scanlines {
     position: absolute;
@@ -242,7 +180,7 @@ async function onDismiss(): Promise<void> {
     opacity: 0.55;
 }
 
-/* ── Terminal title bar ───────────────────────────────────────────────────────── */
+/* Terminal title bar */
 
 .titlebar {
     position: relative;
@@ -279,7 +217,7 @@ async function onDismiss(): Promise<void> {
     transition: color var(--duration-normal) var(--ease-out);
 }
 
-/* ── Main area ────────────────────────────────────────────────────────────────── */
+/* Main area */
 
 .app__main {
     flex: 1;
@@ -292,7 +230,7 @@ async function onDismiss(): Promise<void> {
     min-height: 0;
 }
 
-/* ── Wordmark wrapper — smooth show/hide without layout jump ──────────────────── */
+/* Wordmark wrapper — smooth show/hide without layout jump */
 
 .app__wordmark-wrapper {
     flex-shrink: 0;
@@ -316,7 +254,7 @@ async function onDismiss(): Promise<void> {
     pointer-events: none;
 }
 
-/* ── Wordmark — terminal prompt ───────────────────────────────────────────────── */
+/* Wordmark — terminal prompt */
 
 .app__wordmark {
     display: flex;
@@ -360,7 +298,7 @@ async function onDismiss(): Promise<void> {
     min-width: 0;
 }
 
-/* $ pdf-splitter▌ */
+/* $ pdf-splitter */
 .app__title {
     font-size: var(--text-xl);
     font-weight: var(--weight-bold);
@@ -400,7 +338,7 @@ async function onDismiss(): Promise<void> {
     font-size: var(--text-xs);
 }
 
-/* ── Content container ────────────────────────────────────────────────────────── */
+/* Content container */
 
 .app__content {
     flex: 1;
@@ -413,7 +351,7 @@ async function onDismiss(): Promise<void> {
     overflow: hidden;
 }
 
-/* ── Individual state views ───────────────────────────────────────────────────── */
+/* Individual state views */
 
 .view {
     display: flex;
@@ -422,7 +360,7 @@ async function onDismiss(): Promise<void> {
     flex: 1;
 }
 
-/* ── Processing card ──────────────────────────────────────────────────────────── */
+/* Processing card */
 
 .processing-card {
     padding: var(--space-8);
@@ -432,7 +370,7 @@ async function onDismiss(): Promise<void> {
     justify-content: center;
 }
 
-/* ── Result wrapper ───────────────────────────────────────────────────────────── */
+/* Result wrapper */
 
 .result-wrapper {
     flex: 1;
@@ -450,7 +388,7 @@ async function onDismiss(): Promise<void> {
     max-height: 200px;
 }
 
-/* ── Error card ───────────────────────────────────────────────────────────────── */
+/* Error card */
 
 .error-card {
     padding: var(--space-8);
@@ -460,7 +398,7 @@ async function onDismiss(): Promise<void> {
     justify-content: center;
 }
 
-/* ── Footer ───────────────────────────────────────────────────────────────────── */
+/* Footer */
 
 .app__footer {
     height: 26px;
@@ -486,7 +424,7 @@ async function onDismiss(): Promise<void> {
     opacity: 0.6;
 }
 
-/* ── State-based background tints ─────────────────────────────────────────────── */
+/* State-based background tints */
 
 /* Very subtle radial glow from the top, colour-coded by state. */
 

@@ -1,30 +1,3 @@
-/**
- * usePdfSplitter — composable that owns all Tauri IPC communication and
- * application state for the PDF Splitter UI.
- *
- * # Responsibilities
- *
- * * Manage the application state machine (`idle` → `ready` → `processing`
- *   → `complete` / `error`).
- * * Invoke Tauri commands (`pick_pdf_file`, `pick_output_dir`,
- *   `get_file_info`, `split_pdf`, `reveal_in_finder`).
- * * Subscribe to `split://progress` events and surface them reactively.
- * * Derive convenient display values (progress percentage, default output
- *   directory, formatted file size, etc.) so components stay declarative.
- *
- * # Usage
- *
- * ```ts
- * const {
- *   state, fileInfo, progress, result, error,
- *   pickFile, pickOutputDir, startSplit, revealOutput, reset,
- * } = usePdfSplitter()
- * ```
- *
- * One instance of this composable should live in `App.vue` and the reactive
- * refs passed down as props (or via provide/inject for deeper trees).
- */
-
 import { ref, computed, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -41,8 +14,6 @@ import {
   formatDuration,
 } from '@/types'
 
-// ── Tauri command response types ──────────────────────────────────────────────
-
 /**
  * Response from the `get_file_info` Tauri command.
  * Mirrors `commands::FileInfo` in `src-tauri/src/commands.rs`.
@@ -52,16 +23,10 @@ interface FileInfoResponse {
   sizeBytes: number
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
 /** Tauri event name for per-page progress updates. */
 const EVENT_PROGRESS = 'split://progress' as const
 
-// ── Composable ────────────────────────────────────────────────────────────────
-
 export function usePdfSplitter() {
-  // ── State ──────────────────────────────────────────────────────────────────
-
   /** Current step in the application flow. */
   const state = ref<AppState>('idle')
 
@@ -88,8 +53,6 @@ export function usePdfSplitter() {
   /** Whether an async operation is pending (disables interactive controls). */
   const isBusy = ref(false)
 
-  // ── Private handles ────────────────────────────────────────────────────────
-
   /** Cleanup function returned by `listen()`; called on component unmount. */
   let unlistenProgress: UnlistenFn | null = null
 
@@ -106,8 +69,6 @@ export function usePdfSplitter() {
 
   /** `requestAnimationFrame` handle so we can cancel on cleanup. */
   let rafHandle: number | null = null
-
-  // ── Derived / computed ─────────────────────────────────────────────────────
 
   /** Formatted file size string, e.g. `"2.4 MB"`. */
   const fileSizeFormatted = computed<string>(() =>
@@ -147,8 +108,6 @@ export function usePdfSplitter() {
     const parts = outputDir.value.replace(/\\/g, '/').split('/')
     return parts.slice(-2).join('/')
   })
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
 
   /**
    * Derive the default output directory from a given input file path.
@@ -204,17 +163,12 @@ export function usePdfSplitter() {
     unlistenProgress = await listen<PageProgress>(EVENT_PROGRESS, (event) => {
       const p = event.payload
 
-      // ── Buffer the latest payload ────────────────────────────────────
       pendingProgress = p
 
-      // ── Schedule a single rAF flush (coalesces rapid events) ─────────
       if (rafHandle === null) {
         rafHandle = requestAnimationFrame(() => {
           rafHandle = null
           if (pendingProgress && operation.value) {
-            // Spread into a **new object** so Vue's reactivity system
-            // reliably detects the change (nested mutation on the same
-            // object reference is not guaranteed to trigger watchers).
             operation.value = {
               ...operation.value,
               progress: { ...pendingProgress },
@@ -240,8 +194,6 @@ export function usePdfSplitter() {
     }
     return JSON.stringify(raw)
   }
-
-  // ── Public actions ─────────────────────────────────────────────────────────
 
   /**
    * Open the native file-picker dialog and load metadata for the chosen PDF.
@@ -374,17 +326,12 @@ export function usePdfSplitter() {
     isBusy.value = false
   }
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
-
   /** Clean up the event listener when the owning component is destroyed. */
   onUnmounted(() => {
     disposeProgressListener().catch(console.error)
   })
 
-  // ── Public interface ───────────────────────────────────────────────────────
-
   return {
-    // ── State ────────────────────────────────────────────────────────────────
     /** Current application state. */
     state,
     /** Metadata for the selected PDF file. */
@@ -400,7 +347,6 @@ export function usePdfSplitter() {
     /** True while any async operation is in flight. */
     isBusy,
 
-    // ── Computed ─────────────────────────────────────────────────────────────
     /** Formatted file size, e.g. `"2.4 MB"`. */
     fileSizeFormatted,
     /** Progress as 0–100 integer. */
@@ -412,7 +358,6 @@ export function usePdfSplitter() {
     /** Short display form of the output directory path. */
     outputDirShort,
 
-    // ── Actions ───────────────────────────────────────────────────────────────
     /** Open the PDF file picker dialog. */
     pickFile,
     /** Open the output directory picker dialog. */

@@ -1,27 +1,9 @@
 <script setup lang="ts">
-/**
- * DropZone — idle state view.
- *
- * Terminal aesthetic: looks like a file-drop prompt in a modern terminal
- * emulator.  The dashed border glows green on drag-over; text uses prompt
- * prefixes (`$`, `>`) to reinforce the terminal metaphor.
- *
- * Events
- * ──────
- * • `pick`  — user clicked the "select file" button.
- * • `drop`  — user dropped a PDF; payload is the absolute path string.
- *
- * Props
- * ─────
- * • `busy` — disables interaction while an async operation is in flight.
- */
 
 import { ref } from 'vue'
 
-// ── Props & emits ──────────────────────────────────────────────────────────────
-
 const props = defineProps<{
-    /** Disables the zone while the parent is performing an async operation. */
+    /* Disables the zone while the parent is performing an async operation */
     busy: boolean
 }>()
 
@@ -30,12 +12,8 @@ const emit = defineEmits<{
     drop: [path: string]
 }>()
 
-// ── Drag state ─────────────────────────────────────────────────────────────────
-
 const isDragOver = ref(false)
 let dragCounter = 0
-
-// ── Drag handlers ──────────────────────────────────────────────────────────────
 
 function onDragEnter(event: DragEvent): void {
     event.preventDefault()
@@ -80,8 +58,6 @@ function onDrop(event: DragEvent): void {
     if (path) emit('drop', path)
 }
 
-// ── Click handler ──────────────────────────────────────────────────────────────
-
 function onSelectClick(): void {
     if (!props.busy) emit('pick')
 }
@@ -90,7 +66,6 @@ function onSelectClick(): void {
 <template>
 <div class="drop-zone-wrapper">
 
-    <!-- ── Drop target ──────────────────────────────────────────────────────── -->
     <div class="drop-zone" :class="{
         'drop-zone--active': isDragOver && !busy,
         'drop-zone--busy': busy,
@@ -191,8 +166,6 @@ function onSelectClick(): void {
 </template>
 
 <style scoped>
-/* ── Wrapper ──────────────────────────────────────────────────────────────────── */
-
 .drop-zone-wrapper {
     display: flex;
     flex-direction: column;
@@ -200,8 +173,6 @@ function onSelectClick(): void {
     gap: var(--space-3);
     width: 100%;
 }
-
-/* ── Drop zone container ──────────────────────────────────────────────────────── */
 
 .drop-zone {
     position: relative;
@@ -240,8 +211,6 @@ function onSelectClick(): void {
     opacity: 0.65;
 }
 
-/* ── Glow overlay (drag-over) ────────────────────────────────────────────────── */
-
 .drop-zone__glow {
     position: absolute;
     inset: -60px;
@@ -256,8 +225,6 @@ function onSelectClick(): void {
 .drop-zone--active .drop-zone__glow {
     opacity: 1;
 }
-
-/* ── SVG dashed border ────────────────────────────────────────────────────────── */
 
 .drop-zone__border {
     position: absolute;
@@ -275,8 +242,6 @@ function onSelectClick(): void {
     filter: drop-shadow(0 0 4px rgba(57, 211, 83, 0.5));
 }
 
-/* ── Content ──────────────────────────────────────────────────────────────────── */
-
 .drop-zone__content {
     position: relative;
     z-index: 1;
@@ -292,8 +257,6 @@ function onSelectClick(): void {
 .drop-zone__actions {
     pointer-events: auto;
 }
-
-/* ── Icon ─────────────────────────────────────────────────────────────────────── */
 
 .drop-zone__icon {
     color: var(--color-text-tertiary);
@@ -355,8 +318,6 @@ function onSelectClick(): void {
     opacity: 0.88;
 }
 
-/* ── Labels ───────────────────────────────────────────────────────────────────── */
-
 .drop-zone__label {
     display: flex;
     align-items: center;
@@ -407,8 +368,6 @@ function onSelectClick(): void {
     letter-spacing: 0.05em;
 }
 
-/* ── Button ───────────────────────────────────────────────────────────────────── */
-
 .drop-zone__btn {
     gap: var(--space-2);
 }
@@ -417,8 +376,6 @@ function onSelectClick(): void {
     font-weight: var(--weight-bold);
     opacity: 0.8;
 }
-
-/* ── Hint ─────────────────────────────────────────────────────────────────────── */
 
 .drop-zone__hint {
     display: flex;
