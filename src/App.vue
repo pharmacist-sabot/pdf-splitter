@@ -62,10 +62,7 @@ async function onDismiss(): Promise<void> {
 <template>
 <div class="app" :data-state="state">
 
-<div class="app__scanlines" aria-hidden="true" />
-
-        Tauri `titleBarStyle: "Overlay"` keeps native traffic lights in
-        place while our HTML fills the full window.  We reserve the top
+    <div class="app__scanlines" aria-hidden="true" />
     <header class="titlebar" data-tauri-drag-region aria-hidden="true">
         <div class="titlebar__traffic-lights" data-no-drag />
         <span class="titlebar__title" aria-live="polite">
