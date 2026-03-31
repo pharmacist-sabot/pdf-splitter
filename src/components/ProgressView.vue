@@ -32,8 +32,15 @@ const clampedPercent = computed<number>(() =>
     Math.min(100, Math.max(0, props.percent)),
 )
 
-/** CSS width string for the progress fill element. */
-const fillWidth = computed<string>(() => `${clampedPercent.value}%`)
+/**
+ * CSS transform for the progress fill element.
+ *
+ * Uses `scaleX()` instead of `width` so the animation is GPU-composited
+ * (runs on the compositor thread without layout recalculation).
+ */
+const fillTransform = computed<string>(() =>
+    `scaleX(${clampedPercent.value / 100})`,
+)
 
 /** Human-readable fraction label, e.g. `"32 / 48"`. */
 const fractionLabel = computed<string>(() =>
@@ -125,7 +132,7 @@ const stepDots = computed<boolean[]>(() => {
         <!-- Native progress element (sr + CSS bar) -->
         <div class="progress-track" role="progressbar" :aria-valuenow="clampedPercent" aria-valuemin="0"
             aria-valuemax="100" :aria-label="`${clampedPercent}% complete`">
-            <div class="progress-fill" :style="{ width: fillWidth }" />
+            <div class="progress-fill" :style="{ transform: fillTransform }" />
         </div>
 
         <!-- Step dots -->
@@ -136,13 +143,12 @@ const stepDots = computed<boolean[]>(() => {
 
     <!-- ── Streamed output lines ──────────────────────────────────────────── -->
     <div class="output-stream">
-        <!-- Most-recently completed file -->
-        <Transition name="fade">
-            <div v-if="currentFile" :key="currentFile" class="output-line output-line--ok">
-                <span class="output-line__check" aria-hidden="true">✓</span>
-                <span class="output-line__text truncate">{{ currentFile }}</span>
-            </div>
-        </Transition>
+        <!-- Most-recently completed file (no Vue Transition — avoids costly
+             DOM mount/unmount at high event rates; CSS handles the visual) -->
+        <div v-if="currentFile" class="output-line output-line--ok">
+            <span class="output-line__check" aria-hidden="true">✓</span>
+            <span class="output-line__text truncate">{{ currentFile }}</span>
+        </div>
 
         <!-- Idle / waiting message when no file yet -->
         <div v-if="isStarting" class="output-line output-line--pending">
@@ -315,6 +321,8 @@ const stepDots = computed<boolean[]>(() => {
     border-radius: 0;
     background: var(--color-border-subtle);
     border: none;
+    /* Promote to own GPU layer for smoother updates during rapid progress */
+    will-change: contents;
 }
 
 /* ── Step dots ────────────────────────────────────────────────────────────────── */

@@ -33,9 +33,6 @@ tauri-plugin-opener  = "2"
 # PDF processing
 lopdf = "0.39"
 
-# Parallel page processing
-rayon = "1"
-
 # Error handling
 thiserror = "2"
 

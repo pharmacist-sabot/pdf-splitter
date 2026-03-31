@@ -93,6 +93,20 @@ export function usePdfSplitter() {
   /** Cleanup function returned by `listen()`; called on component unmount. */
   let unlistenProgress: UnlistenFn | null = null
 
+
+
+  /**
+   * Pending progress payload waiting to be committed on the next animation
+   * frame.  When events arrive faster than the display refresh rate (~60 Hz),
+   * only the most recent payload is kept; earlier ones are silently dropped.
+   * This prevents Vue from re-rendering hundreds of times per second during
+   * large splits.
+   */
+  let pendingProgress: PageProgress | null = null
+
+  /** `requestAnimationFrame` handle so we can cancel on cleanup. */
+  let rafHandle: number | null = null
+
   // ── Derived / computed ─────────────────────────────────────────────────────
 
   /** Formatted file size string, e.g. `"2.4 MB"`. */
@@ -153,20 +167,61 @@ export function usePdfSplitter() {
     return `${dir}/${stem}`
   }
 
-  /** Safely dispose the progress event listener. */
+  /**
+   * Safely dispose the progress event listener and cancel any pending animation
+   * frame.
+   */
   async function disposeProgressListener(): Promise<void> {
     if (unlistenProgress) {
       unlistenProgress()
       unlistenProgress = null
     }
+    if (rafHandle !== null) {
+      cancelAnimationFrame(rafHandle)
+      rafHandle = null
+    }
+    pendingProgress = null
   }
 
-  /** Register the `split://progress` event listener. */
+  /**
+   * Register the `split://progress` event listener with built-in
+   * **rAF throttling**.
+   *
+   * ## Why throttle?
+   *
+   * Even though processing is sequential, events for small pages can arrive
+   * faster than the ~60 Hz display refresh rate. Committing every event to
+   * Vue state could cause synchronous re-renders, visibly stuttering the UI.
+   *
+   * Instead, incoming events are buffered into `pendingProgress` (a plain
+   * variable, invisible to Vue).  A single `requestAnimationFrame` callback
+   * then flushes the latest buffered value into the reactive `operation`
+   * ref once per frame.
+   */
   async function attachProgressListener(): Promise<void> {
     await disposeProgressListener()
+
     unlistenProgress = await listen<PageProgress>(EVENT_PROGRESS, (event) => {
-      if (operation.value) {
-        operation.value.progress = event.payload
+      const p = event.payload
+
+      // ── Buffer the latest payload ────────────────────────────────────
+      pendingProgress = p
+
+      // ── Schedule a single rAF flush (coalesces rapid events) ─────────
+      if (rafHandle === null) {
+        rafHandle = requestAnimationFrame(() => {
+          rafHandle = null
+          if (pendingProgress && operation.value) {
+            // Spread into a **new object** so Vue's reactivity system
+            // reliably detects the change (nested mutation on the same
+            // object reference is not guaranteed to trigger watchers).
+            operation.value = {
+              ...operation.value,
+              progress: { ...pendingProgress },
+            }
+            pendingProgress = null
+          }
+        })
       }
     })
   }

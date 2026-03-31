@@ -478,9 +478,15 @@ input[type="search"]:focus {
 
 .progress-fill {
     height: 100%;
+    /* Full width is the base for scaleX — scaleX(0.5) = 50% of track */
+    width: 100%;
     background: var(--gradient-progress);
     border-radius: var(--radius-full);
-    transition: width var(--duration-slow) var(--ease-out);
+    /* GPU-composited: scaleX runs on the compositor thread without layout
+       recalculation, making progress updates silky-smooth even at 60+ fps. */
+    transform-origin: left center;
+    transition: transform var(--duration-slow) var(--ease-out);
+    will-change: transform;
     position: relative;
     overflow: hidden;
 }
