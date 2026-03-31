@@ -2,7 +2,7 @@
    PDF Splitter — Terminal Design System
    =============================================================================
    Design Language
-   ───────────────
+   
    • Phosphor-green terminal aesthetic: JetBrains Mono, dark surfaces,
      neon-green accent inspired by classic CRT/phosphor displays.
    • GitHub Dark colour palette as the base — familiar, battle-tested dark UI.
@@ -12,10 +12,10 @@
    • `prefers-reduced-motion` respected for all transitions/animations.
    ============================================================================= */
 
-/* ── CSS Custom Properties ──────────────────────────────────────────────────── */
+/* CSS Custom Properties */
 
 :root {
-    /* ── Spacing scale (4 px base unit) ──────────────────────────────────────── */
+    /* Spacing scale (4 px base unit) */
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -27,7 +27,7 @@
     --space-12: 48px;
     --space-16: 64px;
 
-    /* ── Border radius — less rounded for terminal precision ──────────────────── */
+    /* Border radius — less rounded for terminal precision */
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
@@ -35,7 +35,7 @@
     --radius-2xl: 14px;
     --radius-full: 9999px;
 
-    /* ── Typography — JetBrains Mono / monospace terminal stack ──────────────── */
+    /* Typography — JetBrains Mono / monospace terminal stack */
     --font-sans:
         "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, "SF Mono",
         "Monaco", "Menlo", monospace;
@@ -43,7 +43,7 @@
         "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, "SF Mono",
         "Monaco", "Menlo", monospace;
 
-    /* ── Font sizes — slightly compact to suit monospace's wider characters ───── */
+    /* Font sizes — slightly compact to suit monospace's wider characters */
     --text-xs: 10px;
     --text-sm: 12px;
     --text-base: 13px;
@@ -53,44 +53,44 @@
     --text-2xl: 23px;
     --text-3xl: 29px;
 
-    /* ── Font weights ─────────────────────────────────────────────────────────── */
+    /* Font weights */
     --weight-regular: 400;
     --weight-medium: 500;
     --weight-semibold: 600;
     --weight-bold: 700;
 
-    /* ── Line heights ─────────────────────────────────────────────────────────── */
+    /* Line heights */
     --leading-tight: 1.2;
     --leading-snug: 1.35;
     --leading-normal: 1.5;
     --leading-relaxed: 1.65;
 
-    /* ── Letter spacing ───────────────────────────────────────────────────────── */
+    /* Letter spacing */
     --tracking-tight: -0.01em;
     --tracking-normal: 0em;
     --tracking-wide: 0.05em;
     --tracking-wider: 0.1em;
 
-    /* ── Easing curves ────────────────────────────────────────────────────────── */
+    /* Easing curves */
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
 
-    /* ── Transition durations — slightly snappier for terminal responsiveness ─── */
+    /* Transition durations — slightly snappier for terminal responsiveness */
     --duration-fast: 100ms;
     --duration-normal: 180ms;
     --duration-slow: 300ms;
     --duration-slower: 420ms;
 
-    /* ── Z-index scale ────────────────────────────────────────────────────────── */
+    /* Z-index scale */
     --z-base: 0;
     --z-raised: 10;
     --z-overlay: 100;
     --z-modal: 200;
     --z-toast: 300;
 
-    /* ── Terminal colour palette — GitHub Dark + phosphor green ──────────────── */
+    /* Terminal colour palette — GitHub Dark + phosphor green */
 
     /* Backgrounds */
     --color-bg: #0d1117;
@@ -143,7 +143,7 @@
     --color-border-subtle: #21262d;
     --color-separator: #21262d;
 
-    /* ── Shadows — dark, heavy; no colour bleed except on glow elements ────────── */
+    /* Shadows — dark, heavy; no colour bleed except on glow elements */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.55);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.4);
@@ -153,7 +153,7 @@
     --shadow-focus:
         0 0 0 2px rgba(57, 211, 83, 0.45), 0 0 12px rgba(57, 211, 83, 0.18);
 
-    /* ── Gradients ────────────────────────────────────────────────────────────── */
+    /* Gradients */
     --gradient-bg: linear-gradient(
         160deg,
         #0d1117 0%,
@@ -170,19 +170,19 @@
         #57e06b 100%
     );
 
-    /* ── Blur — none; terminals are sharp and opaque ──────────────────────────── */
+    /* Blur — none; terminals are sharp and opaque */
     --blur-sm: blur(0px);
     --blur-md: blur(0px);
     --blur-lg: blur(0px);
     --blur-xl: blur(0px);
 
-    /* ── Title-bar safe area ──────────────────────────────────────────────────── */
+    /* Title-bar safe area */
     --titlebar-height: 28px;
 }
 
 /* Terminal is always dark — no light-mode overrides needed. */
 
-/* ── Box-sizing reset ─────────────────────────────────────────────────────────── */
+/* Box-sizing reset */
 
 *,
 *::before,
@@ -192,7 +192,7 @@
     padding: 0;
 }
 
-/* ── Root / document ──────────────────────────────────────────────────────────── */
+/* Root / document */
 
 html {
     overflow-y: scroll;
@@ -226,7 +226,7 @@ textarea,
     cursor: text;
 }
 
-/* ── Typography ───────────────────────────────────────────────────────────────── */
+/* Typography */
 
 h1,
 h2,
@@ -281,7 +281,7 @@ pre {
     font-size: var(--text-sm);
 }
 
-/* ── Links ────────────────────────────────────────────────────────────────────── */
+/* Links */
 
 a {
     color: var(--color-accent);
@@ -295,7 +295,7 @@ a:hover {
     text-shadow: 0 0 8px var(--color-accent-glow);
 }
 
-/* ── Buttons ──────────────────────────────────────────────────────────────────── */
+/* Buttons */
 
 button {
     display: inline-flex;
@@ -425,7 +425,7 @@ button:active:not(:disabled) {
     color: var(--color-text-primary);
 }
 
-/* ── Cards / Surfaces ─────────────────────────────────────────────────────────── */
+/* Cards / Surfaces */
 
 /* Terminals have solid, opaque surfaces — no blur or transparency. */
 .card {
@@ -442,7 +442,7 @@ button:active:not(:disabled) {
     box-shadow: var(--shadow-lg);
 }
 
-/* ── Form inputs ──────────────────────────────────────────────────────────────── */
+/* Form inputs */
 
 input[type="text"],
 input[type="search"] {
@@ -465,7 +465,7 @@ input[type="search"]:focus {
     box-shadow: var(--shadow-focus);
 }
 
-/* ── Progress bar ─────────────────────────────────────────────────────────────── */
+/* Progress bar */
 
 .progress-track {
     width: 100%;
@@ -514,7 +514,7 @@ input[type="search"]:focus {
     }
 }
 
-/* ── Separator ────────────────────────────────────────────────────────────────── */
+/* Separator */
 
 .separator {
     height: 1px;
@@ -522,7 +522,7 @@ input[type="search"]:focus {
     margin: 0;
 }
 
-/* ── Badges / Pills ───────────────────────────────────────────────────────────── */
+/* Badges / Pills */
 
 .badge {
     display: inline-flex;
@@ -556,7 +556,7 @@ input[type="search"]:focus {
     border-color: rgba(57, 211, 83, 0.25);
 }
 
-/* ── Drag region ──────────────────────────────────────────────────────────────── */
+/* Drag region */
 
 [data-tauri-drag-region] {
     -webkit-app-region: drag;
@@ -571,7 +571,7 @@ input[type="search"]:focus {
     app-region: no-drag;
 }
 
-/* ── Icon sizing helpers ──────────────────────────────────────────────────────── */
+/* Icon sizing helpers */
 
 .icon-sm {
     width: 14px;
@@ -599,7 +599,7 @@ input[type="search"]:focus {
     flex-shrink: 0;
 }
 
-/* ── Utility helpers ──────────────────────────────────────────────────────────── */
+/* Utility helpers */
 
 .sr-only {
     position: absolute;
@@ -648,7 +648,7 @@ input[type="search"]:focus {
     font-weight: var(--weight-bold);
 }
 
-/* ── View transitions (state changes) ──────────────────────────────────────────── */
+/* View transitions (state changes) */
 
 .view-enter-active,
 .view-leave-active {
@@ -672,7 +672,7 @@ input[type="search"]:focus {
     transform: translateY(-4px);
 }
 
-/* ── Fade transition ──────────────────────────────────────────────────────────── */
+/* Fade transition */
 
 .fade-enter-active,
 .fade-leave-active {
@@ -685,7 +685,7 @@ input[type="search"]:focus {
     opacity: 0;
 }
 
-/* ── Scale-in transition ──────────────────────────────────────────────────────── */
+/* Scale-in transition */
 
 .scale-enter-active,
 .scale-leave-active {
@@ -705,7 +705,7 @@ input[type="search"]:focus {
     transform: scale(0.97);
 }
 
-/* ── Slide-up list-item stagger ───────────────────────────────────────────────── */
+/* Slide-up list-item stagger */
 
 .list-item-enter-active {
     transition:
@@ -719,7 +719,7 @@ input[type="search"]:focus {
     transform: translateY(8px);
 }
 
-/* ── Pulse (loading indicators) ───────────────────────────────────────────────── */
+/* Pulse (loading indicators) */
 
 @keyframes pulse {
     0%,
@@ -735,7 +735,7 @@ input[type="search"]:focus {
     animation: pulse 2s ease-in-out infinite;
 }
 
-/* ── Spin ─────────────────────────────────────────────────────────────────────── */
+/* Spin */
 
 @keyframes spin {
     to {
@@ -747,7 +747,7 @@ input[type="search"]:focus {
     animation: spin 1s linear infinite;
 }
 
-/* ── Float (idle PDF icon) ───────────────────────────────────────────────────── */
+/* Float (idle PDF icon) */
 
 @keyframes float {
     0%,
@@ -763,7 +763,7 @@ input[type="search"]:focus {
     animation: float 3.8s var(--ease-in-out) infinite;
 }
 
-/* ── Bounce-in (success icon entrance) ───────────────────────────────────────── */
+/* Bounce-in (success icon entrance) */
 
 @keyframes bounce-in {
     0% {
@@ -786,7 +786,7 @@ input[type="search"]:focus {
     animation: bounce-in var(--duration-slow) var(--ease-spring) forwards;
 }
 
-/* ── Cursor blink (terminal text cursor) ─────────────────────────────────────── */
+/* Cursor blink (terminal text cursor) */
 
 @keyframes cursor-blink {
     0%,
@@ -803,7 +803,7 @@ input[type="search"]:focus {
     animation: cursor-blink 1.1s step-end infinite;
 }
 
-/* ── Terminal enter (slide-in from left, like typed output) ──────────────────── */
+/* Terminal enter (slide-in from left, like typed output) */
 
 @keyframes terminal-enter {
     from {
@@ -820,7 +820,7 @@ input[type="search"]:focus {
     animation: terminal-enter var(--duration-normal) var(--ease-out) forwards;
 }
 
-/* ── Reduced motion overrides ─────────────────────────────────────────────────── */
+/* Reduced motion overrides */
 
 @media (prefers-reduced-motion: reduce) {
     *,
@@ -837,7 +837,7 @@ input[type="search"]:focus {
     }
 }
 
-/* ── Scrollbar (result list) ──────────────────────────────────────────────────── */
+/* Scrollbar (result list) */
 
 ::-webkit-scrollbar {
     width: 5px;
@@ -857,7 +857,7 @@ input[type="search"]:focus {
     background: var(--color-border-strong);
 }
 
-/* ── Selection colour ─────────────────────────────────────────────────────────── */
+/* Selection colour */
 
 ::selection {
     background: rgba(57, 211, 83, 0.22);
