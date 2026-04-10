@@ -9,6 +9,8 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "fmt": "cd src-tauri && cargo fmt",
+    "fmt:check": "cd src-tauri && cargo fmt -- --check",
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
