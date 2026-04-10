@@ -18,10 +18,10 @@ use crate::pdf::{self, PageProgress, PdfError, SplitRequest, SplitResult};
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileInfo {
-    /// Number of pages in the document.
-    pub page_count: u32,
-    /// File size in bytes (0 if the metadata read fails for any reason).
-    pub size_bytes: u64,
+  /// Number of pages in the document.
+  pub page_count: u32,
+  /// File size in bytes (0 if the metadata read fails for any reason).
+  pub size_bytes: u64,
 }
 
 // Event identifiers
@@ -47,12 +47,12 @@ pub const EVENT_SPLIT_COMPLETE: &str = "split://complete";
 /// variant only occurs on mobile targets and is therefore handled by a
 /// fallback `to_string()` call.
 fn file_path_to_string(fp: FilePath) -> String {
-    match fp {
-        FilePath::Path(p) => p.to_string_lossy().into_owned(),
-        // `Url` variant is used on mobile targets.  On macOS desktop it is
-        // unreachable in practice, but we handle it to satisfy exhaustiveness.
-        FilePath::Url(url) => url.to_string(),
-    }
+  match fp {
+    FilePath::Path(p) => p.to_string_lossy().into_owned(),
+    // `Url` variant is used on mobile targets.  On macOS desktop it is
+    // unreachable in practice, but we handle it to satisfy exhaustiveness.
+    FilePath::Url(url) => url.to_string(),
+  }
 }
 
 // Commands
@@ -69,7 +69,7 @@ fn file_path_to_string(fp: FilePath) -> String {
 /// Forwards [`PdfError`] for missing files, corrupt PDFs, and empty documents.
 #[tauri::command]
 pub fn get_page_count(path: String) -> Result<u32, PdfError> {
-    pdf::get_page_count(&PathBuf::from(path))
+  pdf::get_page_count(&PathBuf::from(path))
 }
 
 /// Return both page count and file size for the PDF at `path` in a single
@@ -88,13 +88,13 @@ pub fn get_page_count(path: String) -> Result<u32, PdfError> {
 /// Forwards [`PdfError`] for missing files, corrupt PDFs, and empty documents.
 #[tauri::command]
 pub fn get_file_info(path: String) -> Result<FileInfo, PdfError> {
-    let pb = PathBuf::from(path);
-    let page_count = pdf::get_page_count(&pb)?;
-    let size_bytes = fs::metadata(&pb).map(|m| m.len()).unwrap_or(0);
-    Ok(FileInfo {
-        page_count,
-        size_bytes,
-    })
+  let pb = PathBuf::from(path);
+  let page_count = pdf::get_page_count(&pb)?;
+  let size_bytes = fs::metadata(&pb).map(|m| m.len()).unwrap_or(0);
+  Ok(FileInfo {
+    page_count,
+    size_bytes,
+  })
 }
 
 /// Open a native file-picker dialog pre-filtered to PDF files.
@@ -108,17 +108,17 @@ pub fn get_file_info(path: String) -> Result<FileInfo, PdfError> {
 /// (extremely unlikely in normal operation).
 #[tauri::command]
 pub async fn pick_pdf_file<R: Runtime>(app: AppHandle<R>) -> Result<Option<String>, PdfError> {
-    use tauri_plugin_dialog::DialogExt;
+  use tauri_plugin_dialog::DialogExt;
 
-    let path = app
-        .dialog()
-        .file()
-        .set_title("Select a PDF file to split")
-        .add_filter("PDF Document", &["pdf"])
-        .blocking_pick_file()
-        .map(file_path_to_string);
+  let path = app
+    .dialog()
+    .file()
+    .set_title("Select a PDF file to split")
+    .add_filter("PDF Document", &["pdf"])
+    .blocking_pick_file()
+    .map(file_path_to_string);
 
-    Ok(path)
+  Ok(path)
 }
 
 /// Open a native directory-picker dialog for the user to choose where split
@@ -131,16 +131,16 @@ pub async fn pick_pdf_file<R: Runtime>(app: AppHandle<R>) -> Result<Option<Strin
 /// Returns [`PdfError::Internal`] if the dialog plugin reports an error.
 #[tauri::command]
 pub async fn pick_output_dir<R: Runtime>(app: AppHandle<R>) -> Result<Option<String>, PdfError> {
-    use tauri_plugin_dialog::DialogExt;
+  use tauri_plugin_dialog::DialogExt;
 
-    let path = app
-        .dialog()
-        .file()
-        .set_title("Choose output folder")
-        .blocking_pick_folder()
-        .map(file_path_to_string);
+  let path = app
+    .dialog()
+    .file()
+    .set_title("Choose output folder")
+    .blocking_pick_folder()
+    .map(file_path_to_string);
 
-    Ok(path)
+  Ok(path)
 }
 
 /// Split `input_path` into individual-page PDFs inside `output_dir`, emitting
@@ -168,39 +168,39 @@ pub async fn pick_output_dir<R: Runtime>(app: AppHandle<R>) -> Result<Option<Str
 /// I/O failure during write, etc.).
 #[tauri::command]
 pub async fn split_pdf<R: Runtime>(
-    app: AppHandle<R>,
-    input_path: String,
-    output_dir: String,
+  app: AppHandle<R>,
+  input_path: String,
+  output_dir: String,
 ) -> Result<SplitResult, PdfError> {
-    let request = SplitRequest {
-        input_path: PathBuf::from(input_path),
-        output_dir: PathBuf::from(output_dir),
-    };
+  let request = SplitRequest {
+    input_path: PathBuf::from(input_path),
+    output_dir: PathBuf::from(output_dir),
+  };
 
-    // Clone `app` so the closure (which may be called from multiple rayon
-    // workers concurrently) can emit events without moving `app` out of the
-    // async stack frame.
-    let app_handle = app.clone();
+  // Clone `app` so the closure (which may be called from multiple rayon
+  // workers concurrently) can emit events without moving `app` out of the
+  // async stack frame.
+  let app_handle = app.clone();
 
-    // `spawn_blocking` moves the CPU-intensive work off the async executor
-    // thread onto a dedicated blocking thread.  Rayon then distributes
-    // individual page processing across all available CPU cores from within
-    // that blocking thread.
-    let result = tauri::async_runtime::spawn_blocking(move || {
-        pdf::split_pdf(request, move |progress: PageProgress| {
-            // Emit progress event — best-effort; ignore failures (e.g. if the
-            // window was closed mid-operation).
-            let _ = app_handle.emit(EVENT_SPLIT_PROGRESS, &progress);
-        })
+  // `spawn_blocking` moves the CPU-intensive work off the async executor
+  // thread onto a dedicated blocking thread.  Rayon then distributes
+  // individual page processing across all available CPU cores from within
+  // that blocking thread.
+  let result = tauri::async_runtime::spawn_blocking(move || {
+    pdf::split_pdf(request, move |progress: PageProgress| {
+      // Emit progress event — best-effort; ignore failures (e.g. if the
+      // window was closed mid-operation).
+      let _ = app_handle.emit(EVENT_SPLIT_PROGRESS, &progress);
     })
-    .await
-    .map_err(|join_err| PdfError::Internal(join_err.to_string()))??;
+  })
+  .await
+  .map_err(|join_err| PdfError::Internal(join_err.to_string()))??;
 
-    // Emit the completion event as well so subscribers don't have to await
-    // the command promise.
-    let _ = app.emit(EVENT_SPLIT_COMPLETE, &result);
+  // Emit the completion event as well so subscribers don't have to await
+  // the command promise.
+  let _ = app.emit(EVENT_SPLIT_COMPLETE, &result);
 
-    Ok(result)
+  Ok(result)
 }
 
 /// Open `path` (a file or directory) in macOS Finder / the platform's default
@@ -215,42 +215,43 @@ pub async fn split_pdf<R: Runtime>(
 /// Returns [`PdfError::Internal`] if the opener plugin reports an error.
 #[tauri::command]
 pub async fn reveal_in_finder<R: Runtime>(app: AppHandle<R>, path: String) -> Result<(), PdfError> {
-    use tauri_plugin_opener::OpenerExt;
+  use tauri_plugin_opener::OpenerExt;
 
-    app.opener()
-        .reveal_item_in_dir(&path)
-        .map_err(|e| PdfError::Internal(e.to_string()))
+  app
+    .opener()
+    .reveal_item_in_dir(&path)
+    .map_err(|e| PdfError::Internal(e.to_string()))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    /// `get_page_count` with a non-existent path must return `FileNotFound`.
-    #[test]
-    fn get_page_count_missing_file_returns_error() {
-        let result = get_page_count("/no/such/file.pdf".to_owned());
-        assert!(
-            matches!(result, Err(PdfError::FileNotFound { .. })),
-            "expected FileNotFound, got: {result:?}"
-        );
-    }
+  /// `get_page_count` with a non-existent path must return `FileNotFound`.
+  #[test]
+  fn get_page_count_missing_file_returns_error() {
+    let result = get_page_count("/no/such/file.pdf".to_owned());
+    assert!(
+      matches!(result, Err(PdfError::FileNotFound { .. })),
+      "expected FileNotFound, got: {result:?}"
+    );
+  }
 
-    /// `get_file_info` with a non-existent path must return `FileNotFound`.
-    #[test]
-    fn get_file_info_missing_file_returns_error() {
-        let result = get_file_info("/no/such/file.pdf".to_owned());
-        assert!(
-            matches!(result, Err(PdfError::FileNotFound { .. })),
-            "expected FileNotFound, got: {result:?}"
-        );
-    }
+  /// `get_file_info` with a non-existent path must return `FileNotFound`.
+  #[test]
+  fn get_file_info_missing_file_returns_error() {
+    let result = get_file_info("/no/such/file.pdf".to_owned());
+    assert!(
+      matches!(result, Err(PdfError::FileNotFound { .. })),
+      "expected FileNotFound, got: {result:?}"
+    );
+  }
 
-    /// Event name constants must stay stable — they are part of the public
-    /// contract between backend and frontend.
-    #[test]
-    fn event_name_constants_are_stable() {
-        assert_eq!(EVENT_SPLIT_PROGRESS, "split://progress");
-        assert_eq!(EVENT_SPLIT_COMPLETE, "split://complete");
-    }
+  /// Event name constants must stay stable — they are part of the public
+  /// contract between backend and frontend.
+  #[test]
+  fn event_name_constants_are_stable() {
+    assert_eq!(EVENT_SPLIT_PROGRESS, "split://progress");
+    assert_eq!(EVENT_SPLIT_COMPLETE, "split://complete");
+  }
 }

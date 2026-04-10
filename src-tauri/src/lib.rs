@@ -38,26 +38,26 @@ pub mod pdf;
 /// cannot occur on macOS `>= 12` where `WebKit` is always present).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        // Plugin registration
-        // Plugins must be registered before `invoke_handler` so that their
-        // commands are available when the renderer calls `invoke()`.
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
-        // Command registration
-        //
-        // `generate_handler!` is a Tauri macro that builds the dispatch table
-        // from the list of `#[tauri::command]` functions.  Every public command
-        // in `commands.rs` must appear here.
-        .invoke_handler(tauri::generate_handler![
-            commands::get_page_count,
-            commands::get_file_info,
-            commands::pick_pdf_file,
-            commands::pick_output_dir,
-            commands::split_pdf,
-            commands::reveal_in_finder,
-        ])
-        // Launch
-        .run(tauri::generate_context!())
-        .expect("fatal: Tauri application failed to start");
+  tauri::Builder::default()
+    // Plugin registration
+    // Plugins must be registered before `invoke_handler` so that their
+    // commands are available when the renderer calls `invoke()`.
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_opener::init())
+    // Command registration
+    //
+    // `generate_handler!` is a Tauri macro that builds the dispatch table
+    // from the list of `#[tauri::command]` functions.  Every public command
+    // in `commands.rs` must appear here.
+    .invoke_handler(tauri::generate_handler![
+      commands::get_page_count,
+      commands::get_file_info,
+      commands::pick_pdf_file,
+      commands::pick_output_dir,
+      commands::split_pdf,
+      commands::reveal_in_finder,
+    ])
+    // Launch
+    .run(tauri::generate_context!())
+    .expect("fatal: Tauri application failed to start");
 }
