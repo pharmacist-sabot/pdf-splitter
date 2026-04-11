@@ -1,9 +1,9 @@
 <script setup lang="ts">
 
 import { ref } from 'vue'
+import { FileUp } from 'lucide-vue-next'
 
 const props = defineProps<{
-    /* Disables the zone while the parent is performing an async operation */
     busy: boolean
 }>()
 
@@ -66,102 +66,83 @@ function onSelectClick(): void {
 <template>
 <div class="drop-zone-wrapper">
 
-    <div class="drop-zone" :class="{
-        'drop-zone--active': isDragOver && !busy,
-        'drop-zone--busy': busy,
-    }" role="button" tabindex="0" aria-label="Drop a PDF file here or press Space to open the file picker"
-        @dragenter="onDragEnter" @dragleave="onDragLeave" @dragover="onDragOver" @drop="onDrop" @click="onSelectClick"
-        @keydown.space.prevent="onSelectClick" @keydown.enter.prevent="onSelectClick">
-        <!-- Green glow overlay on drag-over -->
+    <div
+        class="drop-zone"
+        :class="{
+            'drop-zone--active': isDragOver && !busy,
+            'drop-zone--busy': busy,
+        }"
+        role="button"
+        tabindex="0"
+        aria-label="Drop a PDF file here or press Space to open the file picker"
+        @dragenter="onDragEnter"
+        @dragleave="onDragLeave"
+        @dragover="onDragOver"
+        @drop="onDrop"
+        @click="onSelectClick"
+        @keydown.space.prevent="onSelectClick"
+        @keydown.enter.prevent="onSelectClick"
+    >
+        <!-- Subtle green glow overlay on drag-over -->
         <div class="drop-zone__glow" aria-hidden="true" />
 
-        <!-- Content -->
         <div class="drop-zone__content">
 
-            <!-- Terminal PDF icon -->
-            <div class="drop-zone__icon" :class="{ 'animate-float': !isDragOver && !busy }" aria-hidden="true">
-                <div class="drop-zone__icon-box">
-                    <!-- ASCII-style document icon rendered as SVG -->
-                    <svg viewBox="0 0 56 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="56" height="64">
-                        <!-- Document body -->
-                        <rect x="2" y="2" width="44" height="56" rx="3" fill="currentColor" class="icon-body" />
-                        <!-- Folded corner -->
-                        <path d="M32 2 L46 16 L32 16 Z" fill="currentColor" class="icon-fold" />
-                        <!-- Corner fold line -->
-                        <path d="M32 2 L46 16 L32 16 Z" stroke="currentColor" stroke-width="1" class="icon-fold-stroke"
-                            fill="none" />
-                        <!-- Label band -->
-                        <rect x="0" y="40" width="48" height="16" rx="2" fill="currentColor" class="icon-band" />
-                        <!-- "PDF" label lines -->
-                        <rect x="6" y="45.5" width="7" height="1.8" rx="0.9" fill="currentColor" class="icon-label" />
-                        <rect x="15" y="45.5" width="5" height="1.8" rx="0.9" fill="currentColor" class="icon-label" />
-                        <rect x="22" y="45.5" width="5" height="1.8" rx="0.9" fill="currentColor" class="icon-label" />
-                        <!-- Content lines -->
-                        <rect x="7" y="18" width="22" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
-                        <rect x="7" y="22" width="18" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
-                        <rect x="7" y="26" width="20" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
-                        <rect x="7" y="30" width="14" height="1.5" rx="0.75" fill="currentColor" class="icon-line" />
-                    </svg>
-                </div>
+            <!-- PDF document icon -->
+            <div
+                class="drop-zone__icon"
+                :class="{ 'animate-float': !isDragOver && !busy }"
+                aria-hidden="true"
+            >
+                <FileUp :size="62" :stroke-width="1.2" />
             </div>
 
-            <!-- Labels -->
-            <div class="drop-zone__label">
+            <!-- Text labels -->
+            <div class="drop-zone__labels">
                 <template v-if="isDragOver && !busy">
-                    <span class="drop-zone__label-prompt" aria-hidden="true">&gt;</span>
-                    <span class="drop-zone__label-main drop-zone__label-main--active">
-                        release to load
-                    </span>
+                    <span class="drop-zone__heading drop-zone__heading--active">Release to load</span>
                 </template>
                 <template v-else-if="busy">
-                    <span class="drop-zone__label-prompt" aria-hidden="true">$</span>
-                    <span class="drop-zone__label-main animate-pulse">
-                        loading<span class="drop-zone__ellipsis">...</span>
-                    </span>
+                    <span class="drop-zone__heading animate-pulse">Loading…</span>
                 </template>
                 <template v-else>
-                    <span class="drop-zone__label-prompt" aria-hidden="true">$</span>
-                    <div class="drop-zone__label-stack">
-                        <span class="drop-zone__label-main">
-                            drop .pdf file here
-                        </span>
-                        <span class="drop-zone__label-sub">
-                            or click to browse
-                        </span>
-                    </div>
+                    <span class="drop-zone__heading">Drop your PDF here</span>
+                    <span class="drop-zone__subtext">or select a file from your computer</span>
                 </template>
             </div>
 
-            <!-- Select-file button -->
+            <!-- Select file button (hidden during drag-over) -->
             <Transition name="fade">
                 <div v-if="!isDragOver" class="drop-zone__actions">
-                    <button type="button" class="btn-primary btn-lg drop-zone__btn" :disabled="busy" tabindex="-1"
-                        aria-hidden="true" @click.stop="onSelectClick">
-                        <span class="drop-zone__btn-prompt" aria-hidden="true">&gt;</span>
-                        select-file
+                    <button
+                        type="button"
+                        class="btn-primary drop-zone__btn"
+                        :disabled="busy"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        @click.stop="onSelectClick"
+                    >
+                        Select file
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" aria-hidden="true">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M3.75 8a.75.75 0 0 1 .75-.75h5.19L7.22 4.78a.75.75 0 0 1 1.06-1.06l3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5a.75.75 0 0 1-1.06-1.06l2.47-2.47H4.5A.75.75 0 0 1 3.75 8Z" fill="currentColor" />
+                        </svg>
                     </button>
                 </div>
             </Transition>
-        </div>
 
-        <!-- SVG dashed border (terminal green on drag-over) -->
-        <svg class="drop-zone__border" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="9" ry="9" fill="none"
-                stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 4" />
-        </svg>
+        </div>
     </div>
 
-    <!-- Hint text -->
+    <!-- Hint text below the zone -->
     <p class="drop-zone__hint" aria-live="polite">
         <template v-if="isDragOver && !busy">
-            <span class="drop-zone__hint-prompt" aria-hidden="true">#</span>
             PDF files only
         </template>
         <template v-else>
-            <span class="drop-zone__hint-prompt" aria-hidden="true">#</span>
-            accepts all pdf versions &nbsp;·&nbsp; any number of pages
+            Accepts all PDF versions · any number of pages
         </template>
     </p>
+
 </div>
 </template>
 
@@ -170,53 +151,64 @@ function onSelectClick(): void {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
+    gap: 10px;
     width: 100%;
+    flex: 1;
 }
 
+/* -----------------------------------------------------------------------
+   Drop zone container
+   --------------------------------------------------------------------- */
+
 .drop-zone {
-    position: relative;
     width: 100%;
-    min-height: 260px;
+    flex: 1;
+    min-height: 220px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-lg);
-    background: var(--color-surface-inset);
+    background: var(--color-surface);
+    border: 1.5px dashed var(--color-border);
     cursor: pointer;
+    outline: none;
+    position: relative;
     overflow: hidden;
     transition:
         background-color var(--duration-normal) var(--ease-out),
-        box-shadow var(--duration-normal) var(--ease-out),
-        transform var(--duration-normal) var(--ease-spring);
-    outline: none;
+        border-color var(--duration-normal) var(--ease-out),
+        box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .drop-zone:focus-visible {
     box-shadow: var(--shadow-focus);
+    border-color: var(--color-accent);
 }
 
-/* Drag-over state — phosphor glow */
+/* Drag-over state */
 .drop-zone--active {
-    background: rgba(57, 211, 83, 0.04);
-    transform: scale(1.004);
+    background: rgba(54, 244, 164, 0.03);
+    border-color: var(--color-accent);
     box-shadow:
-        0 0 0 1px var(--color-accent),
-        0 0 28px rgba(57, 211, 83, 0.18);
+        0 0 0 4px rgba(54, 244, 164, 0.08),
+        inset 0 0 60px rgba(54, 244, 164, 0.03);
 }
 
 /* Busy state */
 .drop-zone--busy {
+    opacity: 0.6;
     cursor: default;
-    opacity: 0.65;
 }
 
+/* Radial glow — only visible on drag-over */
 .drop-zone__glow {
     position: absolute;
-    inset: -60px;
-    background: radial-gradient(ellipse at center,
-            rgba(57, 211, 83, 0.12) 0%,
-            transparent 65%);
+    inset: -80px;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(54, 244, 164, 0.10) 0%,
+        transparent 60%
+    );
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--duration-normal) var(--ease-out);
@@ -226,21 +218,9 @@ function onSelectClick(): void {
     opacity: 1;
 }
 
-.drop-zone__border {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    color: var(--color-border);
-    transition: color var(--duration-normal) var(--ease-out);
-    overflow: visible;
-}
-
-.drop-zone--active .drop-zone__border {
-    color: var(--color-accent);
-    filter: drop-shadow(0 0 4px rgba(57, 211, 83, 0.5));
-}
+/* -----------------------------------------------------------------------
+   Content
+   --------------------------------------------------------------------- */
 
 .drop-zone__content {
     position: relative;
@@ -249,7 +229,7 @@ function onSelectClick(): void {
     flex-direction: column;
     align-items: center;
     gap: var(--space-5);
-    padding: var(--space-8) var(--space-6);
+    padding: var(--space-8) var(--space-7);
     text-align: center;
     pointer-events: none;
 }
@@ -258,8 +238,12 @@ function onSelectClick(): void {
     pointer-events: auto;
 }
 
+/* -----------------------------------------------------------------------
+   Icon
+   --------------------------------------------------------------------- */
+
 .drop-zone__icon {
-    color: var(--color-text-tertiary);
+    color: var(--color-text-quaternary);
     transition: color var(--duration-normal) var(--ease-out);
 }
 
@@ -267,130 +251,72 @@ function onSelectClick(): void {
     color: var(--color-accent);
 }
 
-/* Terminal box around the icon */
-.drop-zone__icon-box {
-    position: relative;
-    display: inline-flex;
-    padding: var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    transition:
-        border-color var(--duration-normal) var(--ease-out),
-        box-shadow var(--duration-normal) var(--ease-out);
-}
+.icon-body   { opacity: 0.10; }
+.icon-fold   { opacity: 0.05; }
+.icon-fold-stroke { opacity: 0.12; }
+.icon-band   { opacity: 0.65; }
+.icon-label  { opacity: 0.85; fill: currentColor; }
+.icon-line   { opacity: 0.12; }
 
-.drop-zone--active .drop-zone__icon-box {
-    border-color: rgba(57, 211, 83, 0.35);
-    box-shadow: 0 0 12px rgba(57, 211, 83, 0.15);
-}
+.drop-zone--active .icon-body  { opacity: 0.18; }
+.drop-zone--active .icon-band  { opacity: 0.85; }
 
-.icon-body {
-    opacity: 0.12;
-}
+/* -----------------------------------------------------------------------
+   Labels
+   --------------------------------------------------------------------- */
 
-.icon-fold {
-    opacity: 0.06;
-}
-
-.icon-fold-stroke {
-    opacity: 0.15;
-}
-
-.icon-band {
-    opacity: 0.70;
-}
-
-.icon-label {
-    opacity: 0.85;
-    fill: currentColor;
-}
-
-.icon-line {
-    opacity: 0.14;
-}
-
-.drop-zone--active .icon-body {
-    opacity: 0.18;
-}
-
-.drop-zone--active .icon-band {
-    opacity: 0.88;
-}
-
-.drop-zone__label {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.drop-zone__label-stack {
+.drop-zone__labels {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
+    align-items: center;
+    gap: 6px;
 }
 
-/* Terminal prompt character: $ or > */
-.drop-zone__label-prompt {
-    font-size: var(--text-xl);
-    font-weight: var(--weight-bold);
-    color: var(--color-accent);
-    font-family: var(--font-mono);
-    line-height: 1;
-    text-shadow: 0 0 8px var(--color-accent-glow);
-    flex-shrink: 0;
-}
-
-.drop-zone__label-main {
-    font-size: var(--text-lg);
-    font-weight: var(--weight-semibold);
-    letter-spacing: -0.01em;
+.drop-zone__heading {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-light);
     color: var(--color-text-primary);
+    line-height: var(--leading-snug);
+    letter-spacing: -0.01em;
     transition: color var(--duration-normal) var(--ease-out);
-    font-family: var(--font-mono);
 }
 
-.drop-zone__label-main--active {
+.drop-zone__heading--active {
     color: var(--color-accent);
-    text-shadow: 0 0 10px rgba(57, 211, 83, 0.3);
 }
 
-.drop-zone__label-sub {
+.drop-zone__subtext {
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
     font-weight: var(--weight-regular);
-    font-family: var(--font-mono);
-}
-
-.drop-zone__ellipsis {
-    display: inline-block;
-    letter-spacing: 0.05em;
-}
-
-.drop-zone__btn {
-    gap: var(--space-2);
-}
-
-.drop-zone__btn-prompt {
-    font-weight: var(--weight-bold);
-    opacity: 0.8;
-}
-
-.drop-zone__hint {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-xs);
-    color: var(--color-text-quaternary);
-    font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-    text-align: center;
     line-height: var(--leading-normal);
 }
 
-.drop-zone__hint-prompt {
+/* -----------------------------------------------------------------------
+   Button
+   --------------------------------------------------------------------- */
+
+.drop-zone__btn {
+    /* Inherits .btn-primary — white pill */
+    gap: var(--space-2);
+    font-size: var(--text-md);
+    padding: 9px 22px 9px 18px;
+    min-height: 40px;
+}
+
+/* -----------------------------------------------------------------------
+   Hint text
+   --------------------------------------------------------------------- */
+
+.drop-zone__hint {
+    font-family: var(--font-sans);
+    font-size: 11px;
     color: var(--color-text-quaternary);
-    opacity: 0.6;
+    letter-spacing: 0.03em;
+    text-align: center;
+    line-height: var(--leading-normal);
+    min-height: 16px;
 }
 </style>

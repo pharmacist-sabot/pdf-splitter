@@ -44,10 +44,12 @@ function onReset(): void {
 <template>
 <div class="result-view">
 
+    <!-- ── Header ── -->
     <div class="result-header">
-        <!-- ✓ check icon -->
+
+        <!-- Animated ✓ check badge -->
         <div class="success-badge animate-bounce-in" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
                 <circle cx="16" cy="16" r="15" fill="currentColor" class="badge-circle" />
                 <path fill-rule="evenodd" clip-rule="evenodd"
                     d="M22.78 10.72a.75.75 0 0 1 0 1.06l-8.5 8.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.97 2.97 7.97-7.97a.75.75 0 0 1 1.06 0Z"
@@ -57,63 +59,78 @@ function onReset(): void {
 
         <!-- Title & summary -->
         <div class="result-header__text">
-            <h2 class="result-header__title">
-                <span class="result-header__ok" aria-hidden="true">✓</span>
-                done
-            </h2>
-            <p class="result-header__summary">
-                {{ summaryLabel }}
-            </p>
+            <h2 class="result-header__title">Done</h2>
+            <p class="result-header__summary">{{ summaryLabel }}</p>
         </div>
 
         <!-- Stats chips -->
         <div class="result-stats" aria-label="Split statistics">
             <span class="stat-chip stat-chip--files">
-                <svg viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="12"
-                    aria-hidden="true">
-                    <path
-                        d="M1.5 1A.5.5 0 0 1 2 .5h6.086a.5.5 0 0 1 .353.146l2.414 2.415A.5.5 0 0 1 11 3.414V13a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 1.5 13V1Z"
-                        fill="currentColor" opacity="0.55" />
+                <!-- Document icon -->
+                <svg viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="12" aria-hidden="true">
+                    <path d="M1.5 1A.5.5 0 0 1 2 .5h6.086a.5.5 0 0 1 .353.146l2.414 2.415A.5.5 0 0 1 11 3.414V13a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 1.5 13V1Z"
+                        fill="currentColor" opacity="0.7"/>
                 </svg>
                 {{ totalPages }}&nbsp;{{ totalPages === 1 ? 'file' : 'files' }}
             </span>
             <span v-if="elapsedFormatted" class="stat-chip stat-chip--time">
-                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="10"
-                    aria-hidden="true">
+                <!-- Clock icon -->
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="10" aria-hidden="true">
                     <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3" fill="none" />
                     <path d="M6 3.5v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                 </svg>
                 {{ elapsedFormatted }}
             </span>
         </div>
+
     </div>
 
+    <!-- ── File list ── -->
     <div class="file-list-container">
-        <!-- Directory label -->
-        <div class="file-list__header" aria-hidden="true">
-            <span class="file-list__cmd">$ ls -1</span>
-            <span class="file-list__dir truncate">{{ outputDir }}</span>
+
+        <!-- Directory header -->
+        <div class="file-list__header">
+            <!-- Folder icon -->
+            <svg viewBox="0 0 14 12" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="10" aria-hidden="true">
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M1 1.5A.5.5 0 0 1 1.5 1h3.379a.5.5 0 0 1 .353.146l.768.768A.5.5 0 0 0 6.353 2.1H12.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 1 10.6V1.5Z"
+                    fill="currentColor" opacity="0.6"/>
+            </svg>
+            <span class="file-list__header-label">Output folder</span>
+            <span class="file-list__header-path truncate">{{ outputDir }}</span>
         </div>
+
+        <!-- Scrollable file rows -->
         <div class="file-list" role="list" :aria-label="`${totalPages} output files`">
             <TransitionGroup name="list-item" tag="div" class="file-list__inner">
-                <div v-for="(path, index) in outputFiles" :key="path" class="file-row" role="listitem"
-                    :style="{ transitionDelay: `${Math.min(index * 14, 280)}ms` }" @mouseenter="hoveredIndex = index"
-                    @mouseleave="hoveredIndex = null">
+                <div
+                    v-for="(path, index) in outputFiles"
+                    :key="path"
+                    class="file-row"
+                    role="listitem"
+                    :style="{ transitionDelay: `${Math.min(index * 14, 280)}ms` }"
+                    @mouseenter="hoveredIndex = index"
+                    @mouseleave="hoveredIndex = null"
+                >
                     <!-- Line number -->
-                    <span class="file-row__lineno" aria-hidden="true">{{ String(index + 1).padStart(3, ' ') }}</span>
+                    <span class="file-row__lineno" aria-hidden="true">{{ String(index + 1).padStart(3, '\u00a0') }}</span>
 
                     <!-- Filename -->
                     <span class="file-row__name">{{ fileNames[index] }}</span>
 
-                    <!-- Reveal button (hover) -->
+                    <!-- Reveal button (appears on hover) -->
                     <Transition name="fade">
-                        <button v-if="hoveredIndex === index" type="button" class="file-row__reveal"
-                            :aria-label="`Reveal ${fileNames[index]} in Finder`" @click.stop="onRevealFile(path)">
-                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="12"
-                                height="12" aria-hidden="true">
+                        <button
+                            v-if="hoveredIndex === index"
+                            type="button"
+                            class="file-row__reveal"
+                            :aria-label="`Reveal ${fileNames[index]} in Finder`"
+                            @click.stop="onRevealFile(path)"
+                        >
+                            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="11" height="11" aria-hidden="true">
                                 <path fill-rule="evenodd" clip-rule="evenodd"
-                                    d="M1.5 1.5A.5.5 0 0 1 2 1h10a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5v-10ZM3 2.5v9h8v-9H3ZM7 4a.5.5 0 0 1 .5.5v2h2a.5.5 0 0 1 0 1h-2v2a.5.5 0 0 1-1 0v-2h-2a.5.5 0 0 1 0-1h2v-2A.5.5 0 0 1 7 4Z"
-                                    fill="currentColor" />
+                                    d="M2 2.5A.5.5 0 0 1 2.5 2h9a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5v-9ZM3 3v8h8V3H3ZM7 4.5a.5.5 0 0 1 .5.5v2h2a.5.5 0 0 1 0 1h-2v2a.5.5 0 0 1-1 0v-2h-2a.5.5 0 0 1 0-1h2V5a.5.5 0 0 1 .5-.5Z"
+                                    fill="currentColor"/>
                             </svg>
                             reveal
                         </button>
@@ -121,33 +138,42 @@ function onReset(): void {
                 </div>
             </TransitionGroup>
         </div>
+
     </div>
 
+    <!-- ── Actions ── -->
     <div class="result-actions">
-        <button type="button" class="btn-secondary result-actions__secondary" @click="onReset">
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm" aria-hidden="true">
+
+        <!-- "Split another" — ghost/secondary button -->
+        <button type="button" class="btn-ghost result-actions__secondary" @click="onReset">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" aria-hidden="true">
                 <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M3.293 3.293a1 1 0 0 1 1.414 0L8 6.586l3.293-3.293a1 1 0 1 1 1.414 1.414L9.414 8l3.293 3.293a1 1 0 0 1-1.414 1.414L8 9.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L6.586 8 3.293 4.707a1 1 0 0 1 0-1.414Z"
-                    fill="currentColor" />
+                    d="M3.5 8a4.5 4.5 0 0 1 7.854-3H9.25a.75.75 0 0 0 0 1.5h3.25a.75.75 0 0 0 .75-.75V2.5a.75.75 0 0 0-1.5 0v1.386A6 6 0 1 0 14 8a.75.75 0 0 0-1.5 0A4.5 4.5 0 1 1 3.5 8Z"
+                    fill="currentColor"/>
             </svg>
-            split another
+            Split another
         </button>
 
+        <!-- "Open folder" — primary CTA -->
         <button type="button" class="btn-primary result-actions__primary" @click="onRevealDir">
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" aria-hidden="true">
                 <path fill-rule="evenodd" clip-rule="evenodd"
                     d="M1.5 3.5A1.5 1.5 0 0 1 3 2h2.629A1.5 1.5 0 0 1 6.69 2.44L7.81 3.56A.5.5 0 0 0 8.164 3.7H13a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 13 13.7H3A1.5 1.5 0 0 1 1.5 12.2v-8.7Z"
-                    fill="currentColor" opacity="0.8" />
+                    fill="currentColor" opacity="0.85"/>
             </svg>
-            <span class="result-actions__primary-prompt" aria-hidden="true">&gt;</span>
-            open folder
+            Open folder
         </button>
+
     </div>
 
 </div>
 </template>
 
 <style scoped>
+/* ─────────────────────────────────────────────────────────────
+   Result view container
+───────────────────────────────────────────────────────────── */
+
 .result-view {
     display: flex;
     flex-direction: column;
@@ -155,29 +181,33 @@ function onReset(): void {
     width: 100%;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Header
+───────────────────────────────────────────────────────────── */
+
 .result-header {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding-bottom: var(--space-3);
+    padding-bottom: var(--space-4);
     border-bottom: 1px solid var(--color-separator);
 }
 
 /* Animated ✓ check badge */
 .success-badge {
     flex-shrink: 0;
-    width: 30px;
-    height: 30px;
-    color: var(--color-success);
-    filter: drop-shadow(0 0 8px rgba(63, 185, 80, 0.4));
+    width: 32px;
+    height: 32px;
+    color: var(--color-accent);
+    filter: drop-shadow(0 0 10px rgba(54, 244, 164, 0.4));
 }
 
 .badge-circle {
-    opacity: 0.18;
+    opacity: 0.12;
 }
 
 .badge-check {
-    color: var(--color-success);
+    color: var(--color-accent);
 }
 
 /* Header text */
@@ -190,28 +220,22 @@ function onReset(): void {
 }
 
 .result-header__title {
-    font-size: var(--text-xl);
-    font-weight: var(--weight-bold);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-light);
     color: var(--color-text-primary);
     line-height: var(--leading-tight);
-    font-family: var(--font-mono);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.result-header__ok {
-    color: var(--color-success);
-    text-shadow: 0 0 10px rgba(63, 185, 80, 0.45);
+    letter-spacing: var(--tracking-tight);
 }
 
 .result-header__summary {
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
-    font-family: var(--font-mono);
+    color: var(--color-text-secondary);
     line-height: var(--leading-normal);
 }
 
+/* Stats chips */
 .result-stats {
     display: flex;
     align-items: center;
@@ -223,64 +247,79 @@ function onReset(): void {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-    padding: 3px var(--space-2);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.02em;
+    padding: 4px var(--space-2);
     border-radius: var(--radius-sm);
     border: 1px solid transparent;
     line-height: 1;
+    white-space: nowrap;
 }
 
 .stat-chip--files {
     background: var(--color-success-subtle);
     color: var(--color-success-text);
-    border-color: rgba(63, 185, 80, 0.22);
+    border-color: rgba(54, 244, 164, 0.2);
 }
 
 .stat-chip--time {
     background: var(--color-accent-subtle);
     color: var(--color-accent);
-    border-color: rgba(57, 211, 83, 0.22);
+    border-color: rgba(54, 244, 164, 0.2);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   File list
+───────────────────────────────────────────────────────────── */
 
 .file-list-container {
     flex: 1;
     min-height: 0;
-    background: var(--color-surface-inset);
+    background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
-/* `$ ls -1 <dir>` header */
+/* Directory header bar */
 .file-list__header {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-4);
+    gap: var(--space-2);
+    padding: 7px 14px;
+    background: var(--color-surface-raised);
     border-bottom: 1px solid var(--color-border-subtle);
-    background: var(--color-surface);
     overflow: hidden;
 }
 
-.file-list__cmd {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-accent);
+.file-list__header svg {
     flex-shrink: 0;
-    font-weight: var(--weight-semibold);
+    color: var(--color-text-quaternary);
 }
 
-.file-list__dir {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+.file-list__header-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
     color: var(--color-text-quaternary);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.file-list__header-path {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-text-tertiary);
     flex: 1;
     min-width: 0;
 }
 
+/* Scrollable list */
 .file-list {
     height: 100%;
     overflow-y: auto;
@@ -293,15 +332,16 @@ function onReset(): void {
     padding: var(--space-1) 0;
 }
 
+/* File row */
 .file-row {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: 3px var(--space-4);
+    padding: 3px 14px;
     min-height: 28px;
     cursor: default;
-    transition: background-color var(--duration-fast) var(--ease-out);
     position: relative;
+    transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .file-row:hover {
@@ -313,18 +353,17 @@ function onReset(): void {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--color-text-quaternary);
-    min-width: 28px;
+    min-width: 26px;
     text-align: right;
     line-height: 1;
-    /* Monospace space so the number column aligns */
     white-space: pre;
     user-select: none;
 }
 
 .file-row__name {
     flex: 1;
-    font-size: var(--text-sm);
     font-family: var(--font-mono);
+    font-size: var(--text-sm);
     font-weight: var(--weight-regular);
     color: var(--color-text-secondary);
     overflow: hidden;
@@ -337,6 +376,7 @@ function onReset(): void {
     color: var(--color-text-primary);
 }
 
+/* Reveal button (hover) */
 .file-row__reveal {
     position: absolute;
     right: var(--space-3);
@@ -344,12 +384,13 @@ function onReset(): void {
     align-items: center;
     gap: 4px;
     padding: 2px var(--space-2);
-    border: 1px solid rgba(57, 211, 83, 0.3);
+    border: 1px solid rgba(54, 244, 164, 0.25);
     border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: var(--weight-medium);
     color: var(--color-accent);
-    background: rgba(57, 211, 83, 0.07);
+    background: rgba(54, 244, 164, 0.06);
     cursor: pointer;
     transition:
         background-color var(--duration-fast) var(--ease-out),
@@ -360,41 +401,45 @@ function onReset(): void {
 }
 
 .file-row__reveal:hover {
-    background: rgba(57, 211, 83, 0.14);
-    box-shadow: 0 0 8px rgba(57, 211, 83, 0.2);
+    background: rgba(54, 244, 164, 0.12);
+    box-shadow: 0 0 8px rgba(54, 244, 164, 0.15);
 }
 
-.file-row__reveal:active {
-    transform: scale(0.96);
+.file-row__reveal:focus-visible {
+    box-shadow: var(--shadow-focus);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Actions
+───────────────────────────────────────────────────────────── */
 
 .result-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    flex-shrink: 0;
 }
 
+/* "Split another" — ghost, pill, compact */
 .result-actions__secondary {
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
-    font-family: var(--font-mono);
-    padding: var(--space-2) var(--space-4);
+    padding: 8px 18px;
     height: 36px;
-    color: var(--color-text-secondary);
     gap: var(--space-2);
+    color: var(--color-text-secondary);
 }
 
+/* "Open folder" — primary, pill, with neon glow */
 .result-actions__primary {
-    min-width: 160px;
+    min-width: 148px;
     height: 40px;
-    font-size: var(--text-sm);
-    font-family: var(--font-mono);
-    border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-5);
+    font-size: var(--text-md);
     gap: var(--space-2);
     box-shadow:
         var(--shadow-sm),
-        0 0 16px rgba(57, 211, 83, 0.15);
+        0 0 20px rgba(54, 244, 164, 0.12);
     transition:
         background var(--duration-fast) var(--ease-out),
         box-shadow var(--duration-fast) var(--ease-out),
@@ -404,17 +449,12 @@ function onReset(): void {
 .result-actions__primary:hover:not(:disabled) {
     box-shadow:
         var(--shadow-md),
-        0 0 24px rgba(57, 211, 83, 0.28);
+        0 0 28px rgba(54, 244, 164, 0.22);
     transform: translateY(-1px);
 }
 
 .result-actions__primary:active:not(:disabled) {
-    transform: scale(0.97) translateY(0);
+    transform: scale(0.98) translateY(0);
     box-shadow: var(--shadow-sm);
-}
-
-.result-actions__primary-prompt {
-    color: rgba(13, 17, 23, 0.55);
-    font-weight: var(--weight-bold);
 }
 </style>

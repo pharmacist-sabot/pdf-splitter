@@ -22,32 +22,15 @@ const fillTransform = computed<string>(() =>
     `scaleX(${clampedPercent.value / 100})`,
 )
 
-
-/* Human-readable fraction label, e.g. `"32 / 48"` */
 const fractionLabel = computed<string>(() =>
     props.total > 0 ? `${props.current} / ${props.total}` : '…',
 )
 
-/* True before the first progress event arrives */
 const isStarting = computed<boolean>(() => props.current === 0)
 
-/* True once all pages have been processed (finalising phase) */
 const isFinalising = computed<boolean>(
     () => clampedPercent.value >= 100 && !isStarting.value,
 )
-
-/*
- * ASCII block progress bar, e.g. `[████████████░░░░░░░░░░░░]`
- *
- * Uses U+2588 FULL BLOCK (█) for filled segments and U+2591 LIGHT SHADE (░)
- * for empty segments.  The bar is 24 characters wide inside the brackets
- */
-const BAR_LENGTH = 24
-const asciiBar = computed<string>(() => {
-    const filled = Math.round((clampedPercent.value / 100) * BAR_LENGTH)
-    const empty = BAR_LENGTH - filled
-    return '█'.repeat(filled) + '░'.repeat(empty)
-})
 
 const MAX_DOTS = 20
 const stepDots = computed<boolean[]>(() => {
@@ -63,73 +46,114 @@ const stepDots = computed<boolean[]>(() => {
 <template>
 <div class="progress-view" role="status" aria-live="polite" aria-label="Splitting PDF…">
 
+    <!-- Header row -->
     <div class="progress-view__header">
-        <span class="progress-view__prompt" aria-hidden="true">$</span>
+
+        <!-- Animated status indicator -->
+        <div class="progress-view__indicator" aria-hidden="true">
+            <template v-if="isFinalising">
+                <!-- Checkmark when finalising -->
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+                    <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M17.09 8.47a.75.75 0 0 1 0 1.06l-5.5 5.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 1 1 1.06-1.06l1.97 1.97 4.97-4.97a.75.75 0 0 1 1.06 0Z"
+                        fill="currentColor"/>
+                </svg>
+            </template>
+            <template v-else>
+                <!-- Spinning arc when processing -->
+                <svg class="progress-view__spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </template>
+        </div>
+
+        <!-- Title + status -->
         <div class="progress-view__title-group">
             <h2 class="progress-view__title">
-                split-pdf
-                <span class="progress-view__flag">--output</span>
-                <span class="progress-view__filename truncate" :title="fileName">{{ fileName }}</span>
+                <template v-if="isFinalising">Finalising…</template>
+                <template v-else>Splitting PDF</template>
             </h2>
-            <p class="progress-view__running">
-                <span class="progress-view__dot animate-pulse" aria-hidden="true">●</span>
+            <p class="progress-view__filename truncate" :title="fileName">{{ fileName }}</p>
+            <p class="progress-view__status">
                 <template v-if="isStarting">
-                    <span class="animate-pulse">preparing...</span>
+                    <span class="animate-pulse">Preparing pages…</span>
                 </template>
                 <template v-else-if="isFinalising">
-                    <span>finalising<span class="animate-pulse">...</span></span>
+                    <span>Writing output files…</span>
                 </template>
                 <template v-else>
-                    <span>
-                        processing page
-                        <strong>{{ current }}</strong>
-                        of
-                        <strong>{{ total }}</strong>
-                    </span>
+                    <span>Processing page <strong>{{ current }}</strong> of <strong>{{ total }}</strong></span>
                 </template>
             </p>
         </div>
 
         <!-- Percent badge -->
-        <span class="progress-view__pct" :class="{ 'progress-view__pct--finalising': isFinalising }" aria-hidden="true">
-            {{ isStarting ? '…' : `${clampedPercent}%` }}
-        </span>
-    </div>
-
-    <div class="progress-section">
-        <!-- ASCII bar label -->
-        <div class="ascii-bar-row" aria-hidden="true">
-            <span class="ascii-bar-bracket">[</span>
-            <span class="ascii-bar-fill" :class="{ 'ascii-bar-fill--glow': !isStarting }">{{ asciiBar }}</span>
-            <span class="ascii-bar-bracket">]</span>
-            <span class="ascii-bar-stats">{{ fractionLabel }}<span class="ascii-bar-unit"> pages</span></span>
+        <div
+            class="progress-view__pct"
+            :class="{ 'progress-view__pct--finalising': isFinalising }"
+            aria-hidden="true"
+        >
+            <span class="progress-view__pct-number">
+                {{ isStarting ? '0' : clampedPercent }}
+            </span>
+            <span class="progress-view__pct-unit">%</span>
         </div>
 
-        <!-- Native progress element (sr + CSS bar) -->
-        <div class="progress-track" role="progressbar" :aria-valuenow="clampedPercent" aria-valuemin="0"
-            aria-valuemax="100" :aria-label="`${clampedPercent}% complete`">
+    </div>
+
+    <!-- Progress bar area -->
+    <div class="progress-section">
+
+        <!-- Fraction label -->
+        <div class="progress-section__label" aria-hidden="true">
+            <span class="progress-section__fraction">{{ fractionLabel }}</span>
+            <span class="progress-section__unit">pages</span>
+        </div>
+
+        <!-- Track + fill -->
+        <div
+            class="progress-track"
+            role="progressbar"
+            :aria-valuenow="clampedPercent"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-label="`${clampedPercent}% complete`"
+        >
             <div class="progress-fill" :style="{ transform: fillTransform }" />
         </div>
 
         <!-- Step dots -->
         <div v-if="stepDots.length > 1" class="step-dots" aria-hidden="true">
-            <span v-for="(done, i) in stepDots" :key="i" class="step-dot" :class="{ 'step-dot--done': done }" />
+            <span
+                v-for="(done, i) in stepDots"
+                :key="i"
+                class="step-dot"
+                :class="{ 'step-dot--done': done }"
+            />
         </div>
+
     </div>
 
+    <!-- Output stream -->
     <div class="output-stream">
-        <!-- Most-recently completed file (no Vue Transition — avoids costly
-             DOM mount/unmount at high event rates; CSS handles the visual) -->
-        <div v-if="currentFile" class="output-line output-line--ok">
-            <span class="output-line__check" aria-hidden="true">✓</span>
-            <span class="output-line__text truncate">{{ currentFile }}</span>
-        </div>
 
-        <!-- Idle / waiting message when no file yet -->
-        <div v-if="isStarting" class="output-line output-line--pending">
-            <span class="output-line__check animate-pulse" aria-hidden="true">…</span>
-            <span class="output-line__text">waiting for first page...</span>
-        </div>
+        <Transition name="fade" mode="out-in">
+            <div v-if="currentFile" key="file" class="output-line output-line--ok">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12" aria-hidden="true" class="output-line__check-icon">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M11.78 3.22a.75.75 0 0 1 0 1.06l-5.5 5.5a.75.75 0 0 1-1.06 0L2.72 7.28a.75.75 0 1 1 1.06-1.06l2.47 2.47 4.97-4.97a.75.75 0 0 1 1.06 0Z"
+                        fill="currentColor"/>
+                </svg>
+                <span class="output-line__text truncate">{{ currentFile }}</span>
+            </div>
+            <div v-else-if="isStarting" key="pending" class="output-line output-line--pending">
+                <span class="output-line__dot animate-pulse" aria-hidden="true" />
+                <span class="output-line__text">Waiting for first page…</span>
+            </div>
+        </Transition>
+
     </div>
 
 </div>
@@ -139,103 +163,118 @@ const stepDots = computed<boolean[]>(() => {
 .progress-view {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-6);
+    gap: var(--space-7);
     width: 100%;
     padding: var(--space-2) 0;
 }
 
+/* ─── Header ─── */
+
 .progress-view__header {
     display: flex;
     align-items: flex-start;
-    gap: var(--space-3);
+    gap: var(--space-4);
 }
 
-/* $ prompt */
-.progress-view__prompt {
-    font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    font-weight: var(--weight-bold);
-    color: var(--color-accent);
-    text-shadow: 0 0 8px var(--color-accent-glow);
+/* Status icon (spinner / check) */
+.progress-view__indicator {
     flex-shrink: 0;
-    line-height: 1.6;
+    width: 24px;
+    height: 24px;
+    color: var(--color-accent);
+    margin-top: 3px;
+    filter: drop-shadow(0 0 6px var(--color-accent-glow));
+}
+
+.progress-view__spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Title group */
 .progress-view__title-group {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
-    min-width: 0;
-    flex: 1;
+    gap: 3px;
 }
 
 .progress-view__title {
-    font-size: var(--text-base);
-    font-weight: var(--weight-semibold);
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-light);
     color: var(--color-text-primary);
-    line-height: var(--leading-snug);
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.4em;
-}
-
-.progress-view__flag {
-    color: var(--color-text-tertiary);
-    font-weight: var(--weight-regular);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
 }
 
 .progress-view__filename {
-    color: var(--color-accent);
-    max-width: 280px;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-normal);
+    max-width: 340px;
 }
 
-/* Running status */
-.progress-view__running {
+.progress-view__status {
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
-    font-family: var(--font-mono);
     line-height: var(--leading-normal);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
 }
 
-.progress-view__running strong {
+.progress-view__status strong {
     color: var(--color-text-secondary);
     font-weight: var(--weight-semibold);
-}
-
-.progress-view__dot {
-    font-size: 8px;
-    color: var(--color-accent);
 }
 
 /* Percent badge */
 .progress-view__pct {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-text-secondary);
-    background: var(--color-surface-inset);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    padding: 2px var(--space-2);
     flex-shrink: 0;
-    min-width: 48px;
-    text-align: center;
-    transition: color var(--duration-normal) var(--ease-out);
-    letter-spacing: 0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 6px 12px;
+    min-width: 58px;
+    justify-content: center;
+    transition:
+        color var(--duration-normal) var(--ease-out),
+        border-color var(--duration-normal) var(--ease-out);
 }
 
 .progress-view__pct--finalising {
     color: var(--color-accent);
-    border-color: rgba(57, 211, 83, 0.3);
-    text-shadow: 0 0 8px rgba(57, 211, 83, 0.3);
+    border-color: rgba(54, 244, 164, 0.3);
 }
+
+.progress-view__pct-number {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    color: inherit;
+    line-height: 1;
+}
+
+.progress-view__pct-unit {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    color: var(--color-text-quaternary);
+    line-height: 1;
+}
+
+.progress-view__pct--finalising .progress-view__pct-number,
+.progress-view__pct--finalising .progress-view__pct-unit {
+    color: var(--color-accent);
+}
+
+/* ─── Progress section ─── */
 
 .progress-section {
     display: flex;
@@ -243,61 +282,38 @@ const stepDots = computed<boolean[]>(() => {
     gap: var(--space-2);
 }
 
-.ascii-bar-row {
+.progress-section__label {
     display: flex;
     align-items: baseline;
-    gap: 0;
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
+    gap: var(--space-2);
 }
 
-.ascii-bar-bracket {
-    color: var(--color-border-strong);
-    font-weight: var(--weight-bold);
-}
-
-.ascii-bar-fill {
-    color: var(--color-text-quaternary);
-    letter-spacing: -0.02em;
-    transition: color var(--duration-slow) var(--ease-out);
-}
-
-.ascii-bar-fill--glow {
-    /* Use a text gradient for the filled part — done via clip */
-    color: var(--color-accent);
-    text-shadow: 0 0 6px rgba(57, 211, 83, 0.25);
-}
-
-.ascii-bar-stats {
-    margin-left: var(--space-3);
+.progress-section__fraction {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
     color: var(--color-text-secondary);
-    font-size: var(--text-xs);
-    white-space: nowrap;
-    flex-shrink: 0;
+    line-height: 1;
 }
 
-.ascii-bar-unit {
+.progress-section__unit {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
     color: var(--color-text-quaternary);
-    font-weight: var(--weight-regular);
+    line-height: 1;
 }
 
-/* Native progress bar (below the ASCII bar, acts as a precise visual fill) */
+/* Track + fill — from global .progress-track / .progress-fill styles */
 .progress-section .progress-track {
     height: 3px;
-    border-radius: 0;
-    background: var(--color-border-subtle);
-    border: none;
-    /* Promote to own GPU layer for smoother updates during rapid progress */
     will-change: contents;
 }
 
+/* Step dots */
 .step-dots {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     margin-top: var(--space-1);
 }
 
@@ -305,21 +321,21 @@ const stepDots = computed<boolean[]>(() => {
     flex: 1;
     height: 2px;
     border-radius: 1px;
-    background: var(--color-surface-inset);
+    background: var(--color-border);
     transition: background-color var(--duration-normal) var(--ease-out);
 }
 
 .step-dot--done {
     background: var(--color-accent);
-    opacity: 0.55;
-    box-shadow: 0 0 4px rgba(57, 211, 83, 0.3);
+    opacity: 0.6;
 }
 
+/* ─── Output stream ─── */
+
 .output-stream {
-    min-height: 32px;
+    min-height: 34px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
 }
 
 .output-line {
@@ -329,8 +345,8 @@ const stepDots = computed<boolean[]>(() => {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    border-radius: var(--radius-md);
     border-left: 2px solid transparent;
 }
 
@@ -343,16 +359,26 @@ const stepDots = computed<boolean[]>(() => {
 .output-line--pending {
     color: var(--color-text-quaternary);
     border-left-color: var(--color-border);
+    background: var(--color-surface-inset);
 }
 
-.output-line__check {
+.output-line__check-icon {
     flex-shrink: 0;
-    font-weight: var(--weight-bold);
-    font-size: 11px;
+    color: var(--color-accent);
+}
+
+.output-line__dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-quaternary);
+    display: inline-block;
 }
 
 .output-line__text {
     flex: 1;
     min-width: 0;
+    color: inherit;
 }
 </style>

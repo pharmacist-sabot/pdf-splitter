@@ -29,16 +29,19 @@ function onChangeOutput(): void {
 <template>
 <div class="file-card">
 
+    <!-- ── Section 1: File info ── -->
     <div class="file-info">
-        <!-- PDF document icon -->
+
+        <!-- PDF icon -->
         <div class="file-icon" aria-hidden="true">
             <svg viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="44">
                 <rect x="0" y="0" width="28" height="40" rx="3" fill="currentColor" class="doc-body" />
                 <path d="M20 0 L28 8 L20 8 Z" fill="currentColor" class="doc-fold" />
-                <rect x="0" y="26" width="28" height="13" rx="2" fill="currentColor" class="doc-band" />
-                <rect x="3" y="30.5" width="5" height="1.6" rx="0.8" fill="currentColor" class="doc-label" />
-                <rect x="10" y="30.5" width="4" height="1.6" rx="0.8" fill="currentColor" class="doc-label" />
-                <rect x="16" y="30.5" width="4" height="1.6" rx="0.8" fill="currentColor" class="doc-label" />
+                <line x1="20" y1="0" x2="28" y2="8" stroke="currentColor" stroke-width="0.5" class="doc-fold-line" />
+                <rect x="0" y="28" width="28" height="12" rx="2" fill="currentColor" class="doc-band" />
+                <rect x="3" y="32" width="5" height="1.6" rx="0.8" fill="currentColor" class="doc-label" />
+                <rect x="10" y="32" width="4" height="1.6" rx="0.8" fill="currentColor" class="doc-label" />
+                <rect x="16" y="32" width="4" height="1.6" rx="0.8" fill="currentColor" class="doc-label" />
                 <rect x="4" y="9" width="16" height="1.4" rx="0.7" fill="currentColor" class="doc-line" />
                 <rect x="4" y="13" width="13" height="1.4" rx="0.7" fill="currentColor" class="doc-line" />
                 <rect x="4" y="17" width="15" height="1.4" rx="0.7" fill="currentColor" class="doc-line" />
@@ -46,167 +49,167 @@ function onChangeOutput(): void {
             </svg>
         </div>
 
-        <!-- Filename + metadata -->
+        <!-- File name + metadata -->
         <div class="file-meta">
-            <span class="file-prompt" aria-hidden="true">$</span>
-            <div class="file-meta__text">
-                <span class="file-name truncate" :title="fileName">{{ fileName }}</span>
-                <div class="file-details">
+            <span class="file-name truncate" :title="fileName">{{ fileName }}</span>
+            <div class="file-details">
+                <span class="file-detail">
+                    <span class="file-detail__val">{{ pageCount }}</span>
+                    <span class="file-detail__key">{{ pageCount === 1 ? 'page' : 'pages' }}</span>
+                </span>
+                <template v-if="fileSizeFormatted">
+                    <span class="file-detail__sep" aria-hidden="true">·</span>
                     <span class="file-detail">
-                        <span class="file-detail__key">pages</span>
-                        <span class="file-detail__sep">:</span>
-                        <span class="file-detail__val">{{ pageCount }}</span>
-                    </span>
-                    <span v-if="fileSizeFormatted" class="file-detail__dot" aria-hidden="true">·</span>
-                    <span v-if="fileSizeFormatted" class="file-detail">
-                        <span class="file-detail__key">size</span>
-                        <span class="file-detail__sep">:</span>
                         <span class="file-detail__val">{{ fileSizeFormatted }}</span>
                     </span>
-                </div>
+                </template>
             </div>
         </div>
 
-        <!-- Dismiss button -->
-        <button type="button" class="btn-icon dismiss-btn" :disabled="busy" :aria-label="`Remove ${fileName}`"
-            title="Choose a different file" @click="onChangeFile">
+        <!-- Dismiss / change-file button -->
+        <button
+            type="button"
+            class="btn-icon dismiss-btn"
+            :disabled="busy"
+            :aria-label="`Remove ${fileName}`"
+            title="Choose a different file"
+            @click="onChangeFile"
+        >
             <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-md" aria-hidden="true">
-                <path fill-rule="evenodd" clip-rule="evenodd"
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
                     d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z"
-                    fill="currentColor" />
+                    fill="currentColor"
+                />
             </svg>
         </button>
     </div>
 
     <div class="separator" role="separator" />
 
+    <!-- ── Section 2: Output directory ── -->
     <div class="output-row">
-        <div class="output-row__label-group">
-            <!-- Terminal > prompt -->
-            <span class="output-row__prompt" aria-hidden="true">&gt;</span>
-            <div class="output-row__text">
-                <span class="output-row__heading">output</span>
-                <span class="output-row__path truncate" :title="outputDirShort">
-                    {{ outputDirShort || '(same folder as pdf)' }}
-                </span>
-            </div>
+        <div class="output-row__info">
+            <span class="output-row__label">Output folder</span>
+            <span class="output-row__path truncate" :title="outputDirShort">
+                {{ outputDirShort || 'Same folder as PDF' }}
+            </span>
         </div>
-
-        <button type="button" class="btn-secondary output-change-btn" :disabled="busy" @click="onChangeOutput">
-            [change]
+        <button
+            type="button"
+            class="output-change-btn"
+            :disabled="busy"
+            @click="onChangeOutput"
+        >
+            Change
         </button>
     </div>
 
     <div class="separator" role="separator" />
 
+    <!-- ── Section 3: Actions ── -->
     <div class="action-row">
+
         <!-- Page count badge -->
-        <span class="badge badge-info page-badge">
-            <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="10"
-                aria-hidden="true">
+        <span class="page-badge" aria-label="`${pageCount} pages`">
+            <svg viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg" width="10" height="12" aria-hidden="true">
                 <path
-                    d="M2.5 1.5A1 1 0 0 1 3.5.5h5.086a1 1 0 0 1 .707.293l2.414 2.414a1 1 0 0 1 .293.707V12.5a1 1 0 0 1-1 1h-7.5a1 1 0 0 1-1-1v-11Z"
-                    fill="currentColor" opacity="0.55" />
+                    d="M1.5 1A.5.5 0 0 1 2 .5h6.086a.5.5 0 0 1 .353.146l2.414 2.415A.5.5 0 0 1 11 3.414V13a.5.5 0 0 1-.5.5h-8A.5.5 0 0 1 1.5 13V1Z"
+                    fill="currentColor"
+                    opacity="0.6"
+                />
             </svg>
             {{ pageCount }}&nbsp;{{ pageCount === 1 ? 'page' : 'pages' }}
         </span>
 
-        <!-- Split button -->
-        <button type="button" class="btn-primary btn-lg split-btn" :disabled="busy" @click="onSplit">
-            <span class="split-btn__prompt" aria-hidden="true">$</span>
-            split-pdf
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm split-btn__arrow"
-                aria-hidden="true">
-                <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M3.75 8a.75.75 0 0 1 .75-.75h5.19L7.22 4.78a.75.75 0 0 1 1.06-1.06l3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5a.75.75 0 0 1-1.06-1.06l2.47-2.47H4.5A.75.75 0 0 1 3.75 8Z"
-                    fill="currentColor" />
-            </svg>
+        <!-- Split button — primary CTA -->
+        <button
+            type="button"
+            class="btn-primary split-btn"
+            :disabled="busy"
+            @click="onSplit"
+        >
+            <template v-if="busy">
+                <span class="animate-pulse">Splitting…</span>
+            </template>
+            <template v-else>
+                Split PDF
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14" aria-hidden="true" class="split-btn__arrow">
+                    <path
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        d="M3.75 8a.75.75 0 0 1 .75-.75h5.19L7.22 4.78a.75.75 0 0 1 1.06-1.06l3.5 3.5a.75.75 0 0 1 0 1.06l-3.5 3.5a.75.75 0 0 1-1.06-1.06l2.47-2.47H4.5A.75.75 0 0 1 3.75 8Z"
+                        fill="currentColor"
+                    />
+                </svg>
+            </template>
         </button>
+
     </div>
 
 </div>
 </template>
 
 <style scoped>
+/* ─────────────────────────────────────────────
+   Card shell
+   ───────────────────────────────────────────── */
+
 .file-card {
     display: flex;
     flex-direction: column;
-    gap: 0;
     width: 100%;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     overflow: hidden;
 }
 
+/* ─────────────────────────────────────────────
+   Section 1 — File info
+   ───────────────────────────────────────────── */
+
 .file-info {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-5);
+    gap: var(--space-4);
+    padding: 18px 20px;
 }
 
+/* PDF document icon */
 .file-icon {
     flex-shrink: 0;
     color: var(--color-accent);
-    filter: drop-shadow(0 0 6px rgba(57, 211, 83, 0.2));
+    filter: drop-shadow(0 0 8px rgba(54, 244, 164, 0.18));
 }
 
-.doc-body {
-    opacity: 0.12;
-}
+.doc-body      { opacity: 0.10; }
+.doc-fold      { opacity: 0.06; }
+.doc-fold-line { opacity: 0.10; }
+.doc-band      { opacity: 0.70; }
+.doc-label     { opacity: 0.90; fill: var(--color-text-on-accent); }
+.doc-line      { opacity: 0.12; }
 
-.doc-fold {
-    opacity: 0.07;
-}
-
-.doc-band {
-    opacity: 0.75;
-}
-
-.doc-label {
-    opacity: 0.9;
-    fill: var(--color-text-on-accent);
-}
-
-.doc-line {
-    opacity: 0.14;
-}
-
-.file-prompt {
-    font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    font-weight: var(--weight-bold);
-    color: var(--color-accent);
-    text-shadow: 0 0 8px var(--color-accent-glow);
-    flex-shrink: 0;
-    line-height: 1;
-}
-
+/* File name + metadata */
 .file-meta {
     flex: 1;
     min-width: 0;
     display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.file-meta__text {
-    display: flex;
     flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    flex: 1;
+    gap: 5px;
 }
 
 .file-name {
-    font-size: var(--text-md);
-    font-weight: var(--weight-semibold);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-medium);
     color: var(--color-text-primary);
-    font-family: var(--font-mono);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
     display: block;
-    max-width: 340px;
+    max-width: 380px;
 }
 
 .file-details {
@@ -217,31 +220,29 @@ function onChangeOutput(): void {
 
 .file-detail {
     display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    font-size: var(--text-xs);
-    font-family: var(--font-mono);
-}
-
-.file-detail__key {
-    color: var(--color-text-tertiary);
-}
-
-.file-detail__sep {
-    color: var(--color-border-strong);
+    align-items: baseline;
+    gap: 4px;
+    font-size: var(--text-sm);
 }
 
 .file-detail__val {
-    color: var(--color-text-secondary);
+    font-family: var(--font-display);
     font-weight: var(--weight-medium);
+    color: var(--color-text-secondary);
 }
 
-.file-detail__dot {
+.file-detail__key {
+    font-family: var(--font-sans);
+    color: var(--color-text-quaternary);
+}
+
+.file-detail__sep {
     font-size: var(--text-xs);
     color: var(--color-text-quaternary);
     line-height: 1;
 }
 
+/* Dismiss button */
 .dismiss-btn {
     flex-shrink: 0;
     width: 28px;
@@ -258,102 +259,125 @@ function onChangeOutput(): void {
     color: var(--color-error-text);
 }
 
+/* ─────────────────────────────────────────────
+   Section 2 — Output directory
+   ───────────────────────────────────────────── */
+
 .output-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    padding: var(--space-3) var(--space-5);
-    background: var(--color-surface-inset);
+    padding: 12px 20px;
+    background: var(--color-surface-raised);
 }
 
-.output-row__label-group {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-width: 0;
-    flex: 1;
-}
-
-/* Terminal > prompt */
-.output-row__prompt {
-    font-family: var(--font-mono);
-    font-size: var(--text-md);
-    font-weight: var(--weight-bold);
-    color: var(--color-text-tertiary);
-    flex-shrink: 0;
-    line-height: 1;
-}
-
-.output-row__text {
+.output-row__info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     min-width: 0;
     flex: 1;
 }
 
-.output-row__heading {
+.output-row__label {
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-wider);
     text-transform: uppercase;
     color: var(--color-text-quaternary);
-    font-family: var(--font-mono);
     line-height: 1;
 }
 
 .output-row__path {
+    font-family: var(--font-mono);
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
-    font-family: var(--font-mono);
     display: block;
-    max-width: 320px;
+    max-width: 360px;
+    line-height: var(--leading-normal);
 }
 
+/* Compact ghost "Change" button */
 .output-change-btn {
     flex-shrink: 0;
-    font-size: var(--text-xs);
-    font-family: var(--font-mono);
-    letter-spacing: 0.02em;
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-sm);
-    height: 26px;
+    background: transparent;
     color: var(--color-text-tertiary);
-    border-color: var(--color-border-subtle);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 4px 14px;
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.01em;
+    height: 26px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition:
+        color var(--duration-fast) var(--ease-out),
+        border-color var(--duration-fast) var(--ease-out),
+        background var(--duration-fast) var(--ease-out);
+    outline: none;
+    white-space: nowrap;
 }
 
 .output-change-btn:hover:not(:disabled) {
-    color: var(--color-accent);
-    border-color: rgba(57, 211, 83, 0.35);
-    box-shadow: 0 0 8px rgba(57, 211, 83, 0.1);
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-hover);
 }
+
+.output-change-btn:focus-visible {
+    box-shadow: var(--shadow-focus);
+}
+
+.output-change-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────
+   Section 3 — Actions
+   ───────────────────────────────────────────── */
 
 .action-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4) var(--space-5);
+    padding: 14px 20px;
     gap: var(--space-4);
 }
 
+/* Page count badge */
 .page-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-sans);
     font-size: var(--text-xs);
-    font-family: var(--font-mono);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
 }
 
+/* Split button — white pill, black text, neon glow hint */
 .split-btn {
-    min-width: 148px;
-    height: 40px;
-    font-size: var(--text-sm);
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-5);
-    font-family: var(--font-mono);
-    letter-spacing: 0;
+    /* Inherits .btn-primary: white bg, black text, full pill */
+    min-width: 140px;
+    height: 42px;
+    font-size: var(--text-lg);
+    padding: 10px 24px 10px 20px;
     gap: var(--space-2);
     box-shadow:
-        var(--shadow-sm),
-        0 0 16px rgba(57, 211, 83, 0.15);
+        var(--shadow-md),
+        0 0 20px rgba(54, 244, 164, 0.10);
     transition:
         background var(--duration-fast) var(--ease-out),
         box-shadow var(--duration-fast) var(--ease-out),
@@ -364,22 +388,22 @@ function onChangeOutput(): void {
 .split-btn:hover:not(:disabled) {
     box-shadow:
         var(--shadow-md),
-        0 0 24px rgba(57, 211, 83, 0.28);
+        0 0 28px rgba(54, 244, 164, 0.20);
     transform: translateY(-1px);
 }
 
 .split-btn:active:not(:disabled) {
-    transform: scale(0.97) translateY(0);
+    transform: scale(0.98) translateY(0);
     box-shadow: var(--shadow-sm);
 }
 
-.split-btn__prompt {
-    color: rgba(13, 17, 23, 0.6);
-    font-weight: var(--weight-bold);
+.split-btn__arrow {
+    opacity: 0.7;
+    transition: transform var(--duration-fast) var(--ease-out);
 }
 
-.split-btn__arrow {
-    margin-left: var(--space-1);
-    opacity: 0.75;
+.split-btn:hover:not(:disabled) .split-btn__arrow {
+    transform: translateX(2px);
+    opacity: 1;
 }
 </style>

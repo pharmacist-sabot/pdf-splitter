@@ -3,9 +3,7 @@ import { computed } from 'vue'
 import type { PdfError } from '@/types'
 
 const props = defineProps<{
-    /* Human-readable error description forwarded from `PdfError.message` */
     message: string
-    /* Machine-readable error kind — used to render contextual guidance */
     kind?: PdfError['kind']
 }>()
 
@@ -33,179 +31,237 @@ const hint = computed<string>(() => {
 
 const kindLabel = computed<string>(() => {
     switch (props.kind) {
-        case 'FileNotFound': return 'FileNotFound'
-        case 'InvalidPdf': return 'InvalidPdf'
-        case 'NoPages': return 'NoPages'
-        case 'Io': return 'IOError'
-        case 'Internal': return 'InternalError'
-        default: return 'Error'
+        case 'FileNotFound': return 'File Not Found'
+        case 'InvalidPdf':   return 'Invalid PDF'
+        case 'NoPages':      return 'No Pages Found'
+        case 'Io':           return 'IO Error'
+        case 'Internal':     return 'Internal Error'
+        default:             return 'Something went wrong'
     }
 })
 
-function onRetry(): void {
-    emit('retry')
-}
-
-function onDismiss(): void {
-    emit('dismiss')
-}
+function onRetry(): void   { emit('retry') }
+function onDismiss(): void { emit('dismiss') }
 </script>
 
 <template>
 <div class="error-view" role="alert" aria-live="assertive">
 
+    <!-- ── Header ── -->
     <div class="error-header">
-        <span class="error-header__x" aria-hidden="true">✗</span>
-        <div class="error-header__text">
-            <span class="error-header__kind">{{ kindLabel }}</span>
-            <span class="error-header__sep" aria-hidden="true">:</span>
-            <span class="error-header__label">process exited with error</span>
+
+        <!-- Animated error icon -->
+        <div class="error-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+                <circle cx="16" cy="16" r="15" fill="currentColor" class="error-icon__circle" />
+                <!-- X mark -->
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M11.293 11.293a1 1 0 0 1 1.414 0L16 14.586l3.293-3.293a1 1 0 1 1 1.414 1.414L17.414 16l3.293 3.293a1 1 0 0 1-1.414 1.414L16 17.414l-3.293 3.293a1 1 0 0 1-1.414-1.414L14.586 16l-3.293-3.293a1 1 0 0 1 0-1.414Z"
+                    fill="currentColor"
+                    class="error-icon__x"
+                />
+            </svg>
         </div>
+
+        <!-- Title -->
+        <div class="error-header__text">
+            <h2 class="error-header__title">{{ kindLabel }}</h2>
+            <p class="error-header__subtitle">Something went wrong</p>
+        </div>
+
     </div>
 
+    <!-- ── Error message block ── -->
     <div class="error-block">
-        <!-- stderr label -->
+
+        <!-- "Error details" label bar -->
         <div class="error-block__label" aria-hidden="true">
-            <span class="error-block__stream">stderr</span>
+            <span class="error-block__label-text">Error details</span>
         </div>
 
-        <!-- Error message (selectable) -->
+        <!-- Selectable error message -->
         <p class="error-message" data-selectable>
             <span class="error-message__prefix" aria-hidden="true">error:</span>
             {{ message }}
         </p>
+
     </div>
 
+    <!-- ── Hint / guidance ── -->
     <div class="error-note">
-        <span class="error-note__prefix" aria-hidden="true">#</span>
+
+        <!-- Info icon -->
+        <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            aria-hidden="true"
+            class="error-note__icon"
+        >
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2" fill="none" />
+            <path d="M8 7v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <circle cx="8" cy="5" r="0.75" fill="currentColor" />
+        </svg>
+
         <p class="error-note__text">{{ hint }}</p>
+
     </div>
 
-    <div class="separator error-separator" role="separator" />
+    <div class="separator" role="separator" />
 
+    <!-- ── Actions ── -->
     <div class="error-actions">
-        <button type="button" class="btn-ghost error-actions__dismiss" @click="onDismiss">
-            [dismiss]
+
+        <!-- Dismiss -->
+        <button
+            type="button"
+            class="btn-ghost error-actions__dismiss"
+            @click="onDismiss"
+        >
+            Dismiss
         </button>
 
-        <button type="button" class="btn-primary error-actions__retry" @click="onRetry">
-            <span class="error-actions__prompt" aria-hidden="true">$</span>
-            try-again
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-sm" aria-hidden="true">
-                <path fill-rule="evenodd" clip-rule="evenodd"
+        <!-- Try again — primary CTA -->
+        <button
+            type="button"
+            class="btn-primary error-actions__retry"
+            @click="onRetry"
+        >
+            <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                aria-hidden="true"
+            >
+                <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
                     d="M3.5 8a4.5 4.5 0 0 1 7.854-3H9.25a.75.75 0 0 0 0 1.5h3.25a.75.75 0 0 0 .75-.75V2.5a.75.75 0 0 0-1.5 0v1.386A6 6 0 1 0 14 8a.75.75 0 0 0-1.5 0A4.5 4.5 0 1 1 3.5 8Z"
-                    fill="currentColor" />
+                    fill="currentColor"
+                />
             </svg>
+            Try again
         </button>
+
     </div>
 
 </div>
 </template>
 
 <style scoped>
+/* ─────────────────────────────────────────────
+   Container
+   ───────────────────────────────────────────── */
+
 .error-view {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-5);
     width: 100%;
     padding: var(--space-2) 0;
 }
 
+/* ─────────────────────────────────────────────
+   Header
+   ───────────────────────────────────────────── */
+
 .error-header {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
 }
 
-/* ✗ symbol */
-.error-header__x {
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: var(--weight-bold);
-    color: var(--color-error);
-    text-shadow: 0 0 10px rgba(248, 81, 73, 0.45);
+/* Error icon */
+.error-icon {
     flex-shrink: 0;
-    line-height: 1;
-    animation: error-icon-in var(--duration-slow) var(--ease-spring) forwards;
+    width: 32px;
+    height: 32px;
+    color: var(--color-error);
+    filter: drop-shadow(0 0 8px rgba(248, 81, 73, 0.35));
+    animation: error-icon-in var(--duration-slower) var(--ease-spring) forwards;
 }
 
 @keyframes error-icon-in {
-    0% {
-        transform: scale(0.5);
-        opacity: 0;
-    }
-
-    70% {
-        transform: scale(1.15);
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1);   opacity: 1; }
 }
 
+.error-icon__circle {
+    opacity: 0.12;
+}
+
+.error-icon__x {
+    color: var(--color-error);
+}
+
+/* Title + subtitle */
 .error-header__text {
     display: flex;
-    align-items: baseline;
-    gap: 0;
-    font-family: var(--font-mono);
-    font-size: var(--text-base);
-    flex-wrap: wrap;
-    gap: 2px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
 }
 
-.error-header__kind {
-    font-weight: var(--weight-bold);
+.error-header__title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-light);
     color: var(--color-error-text);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
 }
 
-.error-header__sep {
-    color: var(--color-text-quaternary);
-    margin: 0 2px;
-}
-
-.error-header__label {
+.error-header__subtitle {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
     color: var(--color-text-tertiary);
-    font-weight: var(--weight-regular);
+    line-height: var(--leading-normal);
 }
+
+/* ─────────────────────────────────────────────
+   Error block
+   ───────────────────────────────────────────── */
 
 .error-block {
-    border: 1px solid rgba(248, 81, 73, 0.25);
+    border: 1px solid rgba(248, 81, 73, 0.2);
     border-radius: var(--radius-md);
     background: rgba(248, 81, 73, 0.05);
     overflow: hidden;
 }
 
-/* "stderr" label bar */
+/* "Error details" label bar */
 .error-block__label {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-1) var(--space-3);
-    background: rgba(248, 81, 73, 0.08);
-    border-bottom: 1px solid rgba(248, 81, 73, 0.15);
+    padding: 4px 14px;
+    background: rgba(248, 81, 73, 0.07);
+    border-bottom: 1px solid rgba(248, 81, 73, 0.14);
 }
 
-.error-block__stream {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+.error-block__label-text {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
     color: var(--color-error-text);
     opacity: 0.65;
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    font-weight: var(--weight-semibold);
 }
 
-/* Message text */
+/* Selectable error message */
 .error-message {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     color: var(--color-error-text);
     line-height: var(--leading-snug);
-    padding: var(--space-3) var(--space-4);
-    /* Allow user to copy error for bug reports */
+    padding: 10px 14px;
     user-select: text;
     cursor: text;
     word-break: break-all;
@@ -222,32 +278,34 @@ function onDismiss(): void {
     opacity: 0.75;
 }
 
+/* ─────────────────────────────────────────────
+   Hint / guidance
+   ───────────────────────────────────────────── */
+
 .error-note {
     display: flex;
     align-items: flex-start;
     gap: var(--space-2);
 }
 
-.error-note__prefix {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--color-text-quaternary);
+.error-note__icon {
     flex-shrink: 0;
-    line-height: var(--leading-relaxed);
-    opacity: 0.6;
+    color: var(--color-text-quaternary);
+    margin-top: 1px;
 }
 
 .error-note__text {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
     line-height: var(--leading-relaxed);
     flex: 1;
+    min-width: 0;
 }
 
-.error-separator {
-    background: var(--color-separator);
-}
+/* ─────────────────────────────────────────────
+   Actions
+   ───────────────────────────────────────────── */
 
 .error-actions {
     display: flex;
@@ -256,32 +314,24 @@ function onDismiss(): void {
     gap: var(--space-3);
 }
 
+/* "Dismiss" — ghost, compact */
 .error-actions__dismiss {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
-    color: var(--color-text-quaternary);
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-md);
+    padding: 8px 18px;
     height: 36px;
-    letter-spacing: 0.02em;
+    color: var(--color-text-tertiary);
 }
 
-.error-actions__dismiss:hover:not(:disabled) {
-    color: var(--color-text-secondary);
-    background: var(--color-surface-hover);
-}
-
+/* "Try again" — primary pill with subtle glow */
 .error-actions__retry {
-    min-width: 148px;
-    height: 38px;
-    font-size: var(--text-sm);
-    font-family: var(--font-mono);
-    border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-5);
+    min-width: 130px;
+    height: 40px;
+    font-size: var(--text-md);
     gap: var(--space-2);
     box-shadow:
         var(--shadow-sm),
-        0 0 14px rgba(57, 211, 83, 0.15);
+        0 0 16px rgba(54, 244, 164, 0.10);
     transition:
         background var(--duration-fast) var(--ease-out),
         box-shadow var(--duration-fast) var(--ease-out),
@@ -291,22 +341,21 @@ function onDismiss(): void {
 .error-actions__retry:hover:not(:disabled) {
     box-shadow:
         var(--shadow-md),
-        0 0 22px rgba(57, 211, 83, 0.28);
+        0 0 24px rgba(54, 244, 164, 0.20);
     transform: translateY(-1px);
 }
 
 .error-actions__retry:active:not(:disabled) {
-    transform: scale(0.97) translateY(0);
+    transform: scale(0.98) translateY(0);
     box-shadow: var(--shadow-sm);
 }
 
-.error-actions__prompt {
-    color: rgba(13, 17, 23, 0.6);
-    font-weight: var(--weight-bold);
-}
+/* ─────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-    .error-header__x {
+    .error-icon {
         animation: none;
     }
 }

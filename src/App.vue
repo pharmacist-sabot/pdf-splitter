@@ -7,7 +7,6 @@ import ProgressView from '@/components/ProgressView.vue'
 import ResultView from '@/components/ResultView.vue'
 import ErrorView from '@/components/ErrorView.vue'
 
-
 const {
     state,
     fileInfo,
@@ -62,73 +61,86 @@ async function onDismiss(): Promise<void> {
 <template>
 <div class="app" :data-state="state">
 
-    <div class="app__scanlines" aria-hidden="true" />
+    <!-- Atmospheric radial glow at top -->
+    <div class="app__atmosphere" aria-hidden="true" />
+
+    <!-- macOS-style title bar -->
     <header class="titlebar" data-tauri-drag-region aria-hidden="true">
         <div class="titlebar__traffic-lights" data-no-drag />
-        <span class="titlebar__title" aria-live="polite">
-            {{ windowTitle }}
-        </span>
+        <span class="titlebar__title" aria-live="polite">{{ windowTitle }}</span>
     </header>
 
     <main class="app__main" role="main">
+
+        <!-- Wordmark/header that shows on idle + ready states -->
         <div class="app__wordmark-wrapper" :class="{ 'app__wordmark-wrapper--hidden': !showSubtitle }">
             <div class="app__wordmark">
-                <div class="app__logo" aria-hidden="true">
-                    <span class="app__logo-bracket">[</span><span class="app__logo-slash">/</span><span
-                        class="app__logo-bracket">]</span>
-                </div>
 
                 <div class="app__heading-group">
-                    <h1 class="app__title">
-                        <span class="app__prompt" aria-hidden="true">$ </span>pdf-splitter<span
-                            class="app__cursor cursor-blink" aria-hidden="true">▌</span>
-                    </h1>
-                    <p class="app__subtitle">
-                        <span class="app__prompt-dim" aria-hidden="true">&gt; </span>extract every page into its own pdf
-                        — fast
-                    </p>
+                    <h1 class="app__title">PDF Splitter</h1>
+                    <p class="app__subtitle">Extract every page into its own file</p>
                 </div>
+
             </div>
         </div>
 
         <div class="app__content">
             <Transition name="view" mode="out-in">
 
-                <!-- idle: drop zone -->
+                <!-- idle -->
                 <div v-if="state === 'idle'" key="idle" class="view view--idle">
                     <DropZone :busy="isBusy" @pick="pickFile" @drop="onDrop" />
                 </div>
 
-                <!-- ready: file card + split button -->
+                <!-- ready -->
                 <div v-else-if="state === 'ready' && fileInfo" key="ready" class="view view--ready">
-                    <FileCard :file-name="fileInfo.name" :page-count="fileInfo.pageCount"
-                        :file-size-formatted="fileSizeFormatted" :output-dir-short="outputDirShort" :busy="isBusy"
-                        @split="startSplit" @change-file="pickFile" @change-output="pickOutputDir" />
+                    <FileCard
+                        :file-name="fileInfo.name"
+                        :page-count="fileInfo.pageCount"
+                        :file-size-formatted="fileSizeFormatted"
+                        :output-dir-short="outputDirShort"
+                        :busy="isBusy"
+                        @split="startSplit"
+                        @change-file="pickFile"
+                        @change-output="pickOutputDir"
+                    />
                 </div>
 
-                <!-- processing: progress view -->
+                <!-- processing -->
                 <div v-else-if="state === 'processing'" key="processing" class="view view--processing">
                     <div class="processing-card card">
-                        <ProgressView :percent="progressPercent" :current="operation?.progress?.current ?? 0"
+                        <ProgressView
+                            :percent="progressPercent"
+                            :current="operation?.progress?.current ?? 0"
                             :total="operation?.progress?.total ?? (fileInfo?.pageCount ?? 0)"
-                            :current-file="operation?.progress?.fileName ?? ''" :file-name="fileInfo?.name ?? ''" />
+                            :current-file="operation?.progress?.fileName ?? ''"
+                            :file-name="fileInfo?.name ?? ''"
+                        />
                     </div>
                 </div>
 
-                <!-- complete: result view -->
+                <!-- complete -->
                 <div v-else-if="state === 'complete' && result" key="complete" class="view view--complete">
                     <div class="result-wrapper">
-                        <ResultView :total-pages="result.totalPages" :output-files="result.outputFiles"
-                            :elapsed-formatted="elapsedFormatted" :output-dir="outputDir" @reveal="revealOutput"
-                            @reset="reset" />
+                        <ResultView
+                            :total-pages="result.totalPages"
+                            :output-files="result.outputFiles"
+                            :elapsed-formatted="elapsedFormatted"
+                            :output-dir="outputDir"
+                            @reveal="revealOutput"
+                            @reset="reset"
+                        />
                     </div>
                 </div>
 
-                <!-- error: error view -->
+                <!-- error -->
                 <div v-else-if="state === 'error'" key="error" class="view view--error">
                     <div class="error-card card">
-                        <ErrorView :message="error ?? 'An unexpected error occurred.'" @retry="onRetry"
-                            @dismiss="onDismiss" />
+                        <ErrorView
+                            :message="error ?? 'An unexpected error occurred.'"
+                            @retry="onRetry"
+                            @dismiss="onDismiss"
+                        />
                     </div>
                 </div>
 
@@ -137,19 +149,17 @@ async function onDismiss(): Promise<void> {
 
     </main>
 
-    <!-- Footer -->
     <footer class="app__footer" role="contentinfo">
-        <span class="app__footer-text">
-            <span class="app__footer-comment" aria-hidden="true">#</span>
-            pdf-splitter &nbsp;·&nbsp; open source &nbsp;·&nbsp; MIT
-        </span>
+        <span class="app__footer-text">pdf-splitter · open source · MIT</span>
     </footer>
 
 </div>
 </template>
 
 <style scoped>
-/* App shell */
+/* =============================================================================
+   App shell
+   ============================================================================= */
 
 .app {
     width: 720px;
@@ -161,23 +171,23 @@ async function onDismiss(): Promise<void> {
     background: var(--color-bg);
 }
 
-/* CRT scanline overlay */
+/* Atmospheric radial glow — subtle forest-green halo at the top of the window */
 
-.app__scanlines {
+.app__atmosphere {
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(0deg,
-            transparent,
-            transparent 3px,
-            rgba(0, 0, 0, 0.07) 3px,
-            rgba(0, 0, 0, 0.07) 4px);
     pointer-events: none;
-    z-index: var(--z-overlay);
-    /* Subtle — visible only at close range */
-    opacity: 0.55;
+    z-index: 0;
+    background: radial-gradient(
+        ellipse 80% 40% at 50% 0%,
+        rgba(16, 38, 32, 0.8) 0%,
+        transparent 70%
+    );
 }
 
-/* Terminal title bar */
+/* =============================================================================
+   macOS-style title bar
+   ============================================================================= */
 
 .titlebar {
     position: relative;
@@ -187,11 +197,11 @@ async function onDismiss(): Promise<void> {
     justify-content: center;
     flex-shrink: 0;
     z-index: var(--z-overlay);
-    /* Fine separator line below the chrome bar */
     border-bottom: 1px solid var(--color-border-subtle);
+    background: rgba(0, 0, 0, 0.4);
 }
 
-/* Spacer matching the traffic-light cluster width (~72 px on macOS) */
+/* Spacer that matches the macOS traffic-light cluster width (~72 px) */
 .titlebar__traffic-lights {
     position: absolute;
     left: 0;
@@ -202,41 +212,44 @@ async function onDismiss(): Promise<void> {
 .titlebar__title {
     font-size: 11px;
     font-weight: var(--weight-medium);
-    letter-spacing: 0.02em;
     color: var(--color-text-quaternary);
     font-family: var(--font-mono);
+    letter-spacing: 0.02em;
     pointer-events: none;
     max-width: 400px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    /* Subtle green tint on active operations */
-    transition: color var(--duration-normal) var(--ease-out);
+    transition: color 200ms var(--ease-out);
 }
 
-/* Main area */
+/* =============================================================================
+   Main content area
+   ============================================================================= */
 
 .app__main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: var(--space-4) var(--space-8) var(--space-3);
-    /* gap removed — spacing is owned by .app__wordmark-wrapper's padding-bottom
-       so it collapses to 0 together with the wordmark height */
+    padding: 20px 28px 16px;
     overflow: hidden;
     min-height: 0;
+    position: relative;
+    z-index: 1;
 }
 
-/* Wordmark wrapper — smooth show/hide without layout jump */
+/* =============================================================================
+   Wordmark — smooth show/hide without layout jump
+   ============================================================================= */
 
 .app__wordmark-wrapper {
     flex-shrink: 0;
     overflow: hidden;
-    /* generous upper bound; actual content is ≈50 px */
-    max-height: 100px;
+    /* Generous upper bound; actual content is ~52 px */
+    max-height: 90px;
     /* padding-bottom acts as the gap between wordmark and content area,
-       and animates to 0 when collapsing so no extra space remains */
-    padding-bottom: var(--space-4);
+       and collapses to 0 together with the wordmark height */
+    padding-bottom: 20px;
     opacity: 1;
     transition:
         max-height 280ms var(--ease-out),
@@ -251,91 +264,41 @@ async function onDismiss(): Promise<void> {
     pointer-events: none;
 }
 
-/* Wordmark — terminal prompt */
-
 .app__wordmark {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    padding-bottom: var(--space-1);
+    gap: 14px;
+    padding-bottom: 18px;
     border-bottom: 1px solid var(--color-border-subtle);
-}
-
-/* Terminal [/] bracket icon */
-.app__logo {
-    flex-shrink: 0;
-    font-family: var(--font-mono);
-    font-size: 20px;
-    font-weight: var(--weight-bold);
-    line-height: 1;
-    letter-spacing: -0.04em;
-    color: var(--color-accent);
-    text-shadow: 0 0 14px var(--color-accent-glow);
-    /* Subtle entrance */
-    transition: text-shadow var(--duration-normal) var(--ease-out);
-}
-
-.app__logo:hover {
-    text-shadow: 0 0 20px rgba(57, 211, 83, 0.4);
-}
-
-.app__logo-bracket {
-    color: var(--color-text-tertiary);
-    opacity: 0.8;
-}
-
-.app__logo-slash {
-    color: var(--color-accent);
 }
 
 .app__heading-group {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
 }
 
-/* $ pdf-splitter */
 .app__title {
-    font-size: var(--text-xl);
-    font-weight: var(--weight-bold);
-    letter-spacing: -0.015em;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-light);
     color: var(--color-text-primary);
-    line-height: var(--leading-tight);
-    display: flex;
-    align-items: baseline;
-    gap: 0;
+    line-height: 1.0;
+    letter-spacing: -0.02em;
 }
 
-.app__prompt {
-    color: var(--color-accent);
-    font-weight: var(--weight-regular);
-}
-
-.app__cursor {
-    color: var(--color-accent);
-    font-size: 0.9em;
-    margin-left: 2px;
-    text-shadow: 0 0 8px var(--color-accent-glow);
-}
-
-/* > extract every page... */
 .app__subtitle {
+    font-family: var(--font-sans);
     font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
     font-weight: var(--weight-regular);
-    line-height: var(--leading-normal);
-    display: flex;
-    align-items: baseline;
-    gap: 0;
+    color: var(--color-text-tertiary);
+    line-height: 1.5;
 }
 
-.app__prompt-dim {
-    color: var(--color-text-quaternary);
-    font-size: var(--text-xs);
-}
-
-/* Content container */
+/* =============================================================================
+   Content container
+   ============================================================================= */
 
 .app__content {
     flex: 1;
@@ -343,13 +306,12 @@ async function onDismiss(): Promise<void> {
     flex-direction: column;
     min-height: 0;
     position: relative;
-    /* clips absolutely-positioned views during transitions so they
+    /* Clips absolutely-positioned views during transitions so they
        never bleed outside the content area */
     overflow: hidden;
 }
 
 /* Individual state views */
-
 .view {
     display: flex;
     flex-direction: column;
@@ -358,9 +320,8 @@ async function onDismiss(): Promise<void> {
 }
 
 /* Processing card */
-
 .processing-card {
-    padding: var(--space-8);
+    padding: var(--space-7);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -368,7 +329,6 @@ async function onDismiss(): Promise<void> {
 }
 
 /* Result wrapper */
-
 .result-wrapper {
     flex: 1;
     display: flex;
@@ -386,25 +346,26 @@ async function onDismiss(): Promise<void> {
 }
 
 /* Error card */
-
 .error-card {
-    padding: var(--space-8);
+    padding: var(--space-7);
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
-/* Footer */
+/* =============================================================================
+   Footer
+   ============================================================================= */
 
 .app__footer {
-    height: 26px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 0 var(--space-8);
     border-top: 1px solid var(--color-border-subtle);
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .app__footer-text {
@@ -412,44 +373,46 @@ async function onDismiss(): Promise<void> {
     color: var(--color-text-quaternary);
     letter-spacing: 0.06em;
     white-space: nowrap;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
 }
 
-.app__footer-comment {
-    color: var(--color-text-quaternary);
-    margin-right: var(--space-1);
-    opacity: 0.6;
-}
-
-/* State-based background tints */
-
-/* Very subtle radial glow from the top, colour-coded by state. */
+/* =============================================================================
+   State-based background tints
+   Very subtle radial glows from the top, colour-coded by app state.
+   ============================================================================= */
 
 .app[data-state="processing"] {
-    background-image: radial-gradient(ellipse 60% 30% at 50% 0%,
-            rgba(57, 211, 83, 0.04) 0%,
-            transparent 100%);
+    background-image: radial-gradient(
+        ellipse 60% 30% at 50% 0%,
+        rgba(54, 244, 164, 0.05) 0%,
+        transparent 100%
+    );
 }
 
 .app[data-state="complete"] {
-    background-image: radial-gradient(ellipse 60% 30% at 50% 0%,
-            rgba(63, 185, 80, 0.06) 0%,
-            transparent 100%);
+    background-image: radial-gradient(
+        ellipse 60% 30% at 50% 0%,
+        rgba(54, 244, 164, 0.07) 0%,
+        transparent 100%
+    );
 }
 
 .app[data-state="error"] {
-    background-image: radial-gradient(ellipse 60% 30% at 50% 0%,
-            rgba(248, 81, 73, 0.05) 0%,
-            transparent 100%);
+    background-image: radial-gradient(
+        ellipse 60% 30% at 50% 0%,
+        rgba(248, 81, 73, 0.05) 0%,
+        transparent 100%
+    );
 }
 
-/* Title text picks up a hint of colour during active operations */
+/* Title text picks up a colour hint during active operations */
+
 .app[data-state="processing"] .titlebar__title,
 .app[data-state="complete"] .titlebar__title {
-    color: rgba(57, 211, 83, 0.55);
+    color: rgba(54, 244, 164, 0.6);
 }
 
 .app[data-state="error"] .titlebar__title {
-    color: rgba(248, 81, 73, 0.55);
+    color: rgba(248, 81, 73, 0.6);
 }
 </style>
