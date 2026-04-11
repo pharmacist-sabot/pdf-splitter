@@ -45,7 +45,7 @@ cd pdf-splitter
 npm install
 
 # 3. Start the development server (hot-reload for UI + Rust)
-npm run tauri:dev
+npm run tauri dev
 ```
 
 ### Production Build
@@ -54,7 +54,7 @@ npm run tauri:dev
 
 ```bash
 # Build the optimized binary + macOS app bundle + DMG installer
-npm run tauri:build
+npm run tauri build
 ```
 
 The output artifacts (macOS `.app` bundle and `.dmg` installer) will be generated in the `src-tauri/target/release/bundle/` directory.
@@ -64,7 +64,7 @@ The output artifacts (macOS `.app` bundle and `.dmg` installer) will be generate
 You can build the app locally on Windows using the same command:
 
 ```bash
-npm run tauri:build
+npm run tauri build
 ```
 
 The output artifacts (`.msi` or `.exe` installer) will be generated in the `src-tauri/target/release/bundle/` directory.
