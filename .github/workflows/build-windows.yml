@@ -1,11 +1,11 @@
-name: 'Release Windows Installer'
+name: "Release Windows Installer"
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
-  
+
 permissions:
   contents: write
   pull-requests: read
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -30,7 +30,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       - name: Install Frontend Dependencies
         run: npm ci
@@ -41,7 +41,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'PDF Splitter ${{ github.ref_name }}'
-          releaseBody: 'ดาวน์โหลดไฟล์ตัวติดตั้ง .msi หรือ .exe สำหรับ Windows ได้ที่ Assets ด้านล่าง'
+          releaseName: "PDF Splitter ${{ github.ref_name }}"
+          releaseBody: "See the assets to download this version and install."
           releaseDraft: false
           prerelease: false
